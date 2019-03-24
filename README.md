@@ -68,7 +68,7 @@ requests, so `use` is fine:
 import WebSocketExpress from 'websocket-express';
 
 const app = new WebSocketExpress();
-app.use(WebSocketExpress.static);
+app.use(WebSocketExpress.static(myDirectory));
 ```
 
 ## API
