@@ -71,4 +71,4 @@ export default class WebSocketExpress {
   }
 }
 
-WebSocketExpress.static = wrapNonWebsocket(express.static);
+WebSocketExpress.static = (...args) => wrapNonWebsocket(express.static(...args));

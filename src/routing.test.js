@@ -1,7 +1,7 @@
 import request from 'superwstest';
 import makeTestServer from './test-helpers/makeTestServer';
 
-describe('WebSocketExpress', () => {
+describe('WebSocketExpress routing', () => {
   let server;
 
   beforeEach((done) => {
