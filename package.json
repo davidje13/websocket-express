@@ -1,0 +1,46 @@
+{
+  "name": "websocket-express",
+  "version": "1.0.0",
+  "description": "express and ws combined",
+  "files": [
+    "build/**/*"
+  ],
+  "main": "build/index.js",
+  "scripts": {
+    "build": "webpack --mode production",
+    "lint": "eslint --format codeframe --ext mjs,jsx,js src",
+    "test": "jest && npm run lint",
+    "test:watch": "jest --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davidje13/websocket-express.git"
+  },
+  "keywords": [
+    "express",
+    "ws",
+    "WebSocket",
+    "WebSockets"
+  ],
+  "author": "David Evans",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/davidje13/websocket-express/issues"
+  },
+  "homepage": "https://github.com/davidje13/websocket-express#readme",
+  "dependencies": {
+    "express": "^4.16.4",
+    "ws": "^6.2.0"
+  },
+  "devDependencies": {
+    "@neutrinojs/airbnb-base": "^9.0.0-rc.0",
+    "@neutrinojs/jest": "^9.0.0-rc.0",
+    "@neutrinojs/library": "^9.0.0-rc.0",
+    "eslint": "^5.15.3",
+    "jest": "^24.5.0",
+    "neutrino": "^9.0.0-rc.0",
+    "superwstest": "git+https://github.com/davidje13/superwstest.git#semver:^1.0.0",
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.3.0"
+  }
+}
