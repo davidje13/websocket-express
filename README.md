@@ -61,6 +61,16 @@ If you have a vanilla express `Router` or middleware (e.g. from an
 external library), it is recommended to use `useHTTP` rather than `use`
 to attach it, to ensure it is not confused by WebSocket requests.
 
+The `static` middleware is bundled by default and ignores WebSocket
+requests, so `use` is fine:
+
+```javascript
+import WebSocketExpress from 'websocket-express';
+
+const app = new WebSocketExpress();
+app.use(WebSocketExpress.static);
+```
+
 ## API
 
 The main method is `Router.ws`. This accepts a (possibly asynchronous)

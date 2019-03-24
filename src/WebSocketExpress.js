@@ -1,6 +1,7 @@
 import http from 'http';
 import express from 'express';
 import WebSocket from 'ws';
+import { wrapNonWebsocket } from './wrapHandlers';
 
 const noop = () => {};
 
@@ -69,3 +70,5 @@ export default class WebSocketExpress {
     return server;
   }
 }
+
+WebSocketExpress.static = wrapNonWebsocket(express.static);

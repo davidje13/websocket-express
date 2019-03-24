@@ -13,7 +13,7 @@ function wrapWebsocket(fn) {
   };
 }
 
-function wrapNonWebsocket(fn) {
+export function wrapNonWebsocket(fn) {
   if (typeof fn !== 'function') {
     return fn;
   }
