@@ -30,7 +30,7 @@
   "homepage": "https://github.com/davidje13/websocket-express#readme",
   "dependencies": {
     "express": "^4.16.4",
-    "ws": "^6.2.0"
+    "ws": "^6.2.1"
   },
   "devDependencies": {
     "@neutrinojs/airbnb-base": "^9.0.0-rc.0",
@@ -39,7 +39,7 @@
     "eslint": "^5.15.3",
     "jest": "^24.5.0",
     "neutrino": "^9.0.0-rc.0",
-    "superwstest": "git+https://github.com/davidje13/superwstest.git#semver:^1.0.0",
+    "superwstest": "git+https://github.com/davidje13/superwstest.git#semver:^1.0.1",
     "webpack": "^4.29.6",
     "webpack-cli": "^3.3.0"
   }

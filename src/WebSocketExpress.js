@@ -22,7 +22,7 @@ export default class WebSocketExpress {
     this.app.use((err, req, res, next) => {
       // error handler: close web socket
       if (res.websocket) {
-        res.websocket.close();
+        res.websocket.close(1011, 'Internal Error');
       }
       next(err);
     });
@@ -49,7 +49,7 @@ export default class WebSocketExpress {
       this.app.use((req, res, next) => {
         // 404 handler: close web socket (must be last handler)
         if (res.websocket) {
-          res.websocket.close();
+          res.websocket.close(4404, 'Not Found');
         } else {
           next();
         }

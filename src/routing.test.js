@@ -54,6 +54,12 @@ describe('WebSocketExpress routing', () => {
         .expectClosed();
     });
 
+    it('returns a not found status for unknown URLs', async () => {
+      await request(server)
+        .ws('/path/nope')
+        .expectClosed(4404, 'Not Found');
+    });
+
     it('responds to asynchronously accepted connections', async () => {
       await request(server)
         .ws('/path/ws-async')
