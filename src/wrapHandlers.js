@@ -32,8 +32,17 @@ function wrapHandler(o, method, wrapper) {
   target[method] = (...handlers) => original(...handlers.map(wrapper));
 }
 
-export default function wrapHandlers(o) {
+export default function wrapHandlers(o, src = null) {
   const target = o;
+
+  if (src) {
+    target.use = src.use.bind(src);
+    http.METHODS.forEach((method) => {
+      const name = method.toLowerCase();
+      target[name] = src[name].bind(src);
+    });
+    target.all = src.all.bind(src);
+  }
 
   target.ws = target.use;
   wrapHandler(target, 'ws', wrapWebsocket);

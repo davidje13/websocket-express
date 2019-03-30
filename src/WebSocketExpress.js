@@ -1,9 +1,26 @@
 import http from 'http';
 import express from 'express';
 import WebSocket from 'ws';
-import { wrapNonWebsocket } from './wrapHandlers';
+import wrapHandlers, { wrapNonWebsocket } from './wrapHandlers';
 
 const noop = () => {};
+
+const FORWARDED_EXPRESS_METHODS = [
+  'enable',
+  'enabled',
+  'disable',
+  'disabled',
+  'set',
+  'get',
+  'engine',
+  'path',
+];
+
+const FORWARDED_HTTP_MIDDLEWARE = [
+  'static',
+  'json',
+  'urlencoded',
+];
 
 function wrapWSResponse(websocket) {
   return {
@@ -17,6 +34,7 @@ function wrapWSResponse(websocket) {
 export default class WebSocketExpress {
   constructor() {
     this.app = express();
+    this.locals = this.app.locals;
     this.wsServer = new WebSocket.Server({ noServer: true });
 
     this.app.use((err, req, res, next) => {
@@ -27,10 +45,15 @@ export default class WebSocketExpress {
       next(err);
     });
 
-    this.use = this.app.use.bind(this.app);
     this.handleUpgrade = this.handleUpgrade.bind(this);
     this.handleRequest = this.handleRequest.bind(this);
     this.has404 = false;
+
+    FORWARDED_EXPRESS_METHODS.forEach((method) => {
+      this[method] = this.app[method].bind(this.app);
+    });
+
+    wrapHandlers(this, this.app);
   }
 
   handleUpgrade(req, socket, head) {
@@ -69,6 +92,15 @@ export default class WebSocketExpress {
     this.attach(server);
     return server;
   }
+
+  listen(...args) {
+    const server = this.createServer();
+    return server.listen(...args);
+  }
 }
 
-WebSocketExpress.static = (...args) => wrapNonWebsocket(express.static(...args));
+FORWARDED_HTTP_MIDDLEWARE.forEach((middleware) => {
+  WebSocketExpress[middleware] = (...args) => wrapNonWebsocket(
+    express[middleware](...args),
+  );
+});

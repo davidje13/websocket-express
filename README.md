@@ -61,8 +61,8 @@ If you have a vanilla express `Router` or middleware (e.g. from an
 external library), it is recommended to use `useHTTP` rather than `use`
 to attach it, to ensure it is not confused by WebSocket requests.
 
-The `static` middleware is bundled by default and ignores WebSocket
-requests, so `use` is fine:
+The `static`, `json` and `urlencoded` middleware is bundled by default
+and ignores WebSocket requests, so `use` is fine:
 
 ```javascript
 import WebSocketExpress from 'websocket-express';
@@ -86,7 +86,7 @@ error description), and the next possible handler, or the error
 handler, will be called (according to the standard express logic).
 
 If no handlers are able to accept a WebSocket request, it will be
-closed.
+closed (with code 4404 by default).
 
 As with `get` / `post` / etc. it is possible to register a WebSocket
 handler under the same URL as a non-websocket handler.
