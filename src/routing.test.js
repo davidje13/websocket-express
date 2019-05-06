@@ -1,5 +1,55 @@
 import request from 'superwstest';
-import makeTestServer from './test-helpers/makeTestServer';
+import WebSocketExpress from './WebSocketExpress';
+import Router from './Router';
+
+function sleep(millis) {
+  return new Promise((resolve) => setTimeout(resolve, millis));
+}
+
+export default function makeTestServer() {
+  const app = new WebSocketExpress();
+  const router = new Router();
+
+  router.get('/path/get', (req, res) => {
+    res.end('get-output');
+  });
+
+  router.ws('/path/ws', async (req, res) => {
+    const ws = await res.accept();
+    ws.on('message', (msg) => {
+      ws.send(`echo ${msg}`);
+    });
+    ws.send('hello');
+  });
+
+  router.ws('/path/reject-ws', (req, res, next) => {
+    next();
+  });
+
+  router.ws('/path/explicit-reject-ws', (req, res) => {
+    res.reject();
+  });
+
+  router.ws('/path/ws-async', async (req, res) => {
+    await sleep(100);
+    const ws = await res.accept();
+    ws.send('hello');
+  });
+
+  router.ws('/path/reject-ws-async', async (req, res, next) => {
+    await sleep(100);
+    next();
+  });
+
+  router.ws('/path/explicit-reject-ws-async', async (req, res) => {
+    await sleep(100);
+    res.reject();
+  });
+
+  app.use(router);
+
+  return app.createServer();
+}
 
 describe('WebSocketExpress routing', () => {
   let server;
@@ -25,7 +75,7 @@ describe('WebSocketExpress routing', () => {
     it('does not respond to websocket connections', async () => {
       await request(server)
         .ws('/path/get')
-        .expectClosed();
+        .expectConnectionError(404);
     });
   });
 
@@ -51,13 +101,19 @@ describe('WebSocketExpress routing', () => {
     it('does not respond to rejected connections', async () => {
       await request(server)
         .ws('/path/reject-ws')
-        .expectClosed();
+        .expectConnectionError(404);
     });
 
-    it('returns a not found status for unknown URLs', async () => {
+    it('rejects connection if handler rejects', async () => {
+      await request(server)
+        .ws('/path/explicit-reject-ws')
+        .expectConnectionError(500);
+    });
+
+    it('returns a HTTP not found status for unknown URLs', async () => {
       await request(server)
         .ws('/path/nope')
-        .expectClosed(4404, 'Not Found');
+        .expectConnectionError(404);
     });
 
     it('responds to asynchronously accepted connections', async () => {
@@ -71,7 +127,13 @@ describe('WebSocketExpress routing', () => {
     it('does not respond to asynchronously rejected connections', async () => {
       await request(server)
         .ws('/path/reject-ws-async')
-        .expectClosed();
+        .expectConnectionError(404);
+    });
+
+    it('rejects connection asynchronously if handler rejects', async () => {
+      await request(server)
+        .ws('/path/explicit-reject-ws-async')
+        .expectConnectionError(500);
     });
   });
 });

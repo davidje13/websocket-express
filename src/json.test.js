@@ -1,7 +1,7 @@
 import request from 'superwstest';
 import WebSocketExpress from './WebSocketExpress';
 
-export default function makeTestServer() {
+function makeTestServer() {
   const app = new WebSocketExpress();
   app.use(WebSocketExpress.json());
 
@@ -9,7 +9,8 @@ export default function makeTestServer() {
     res.json({ parsed: req.body });
   });
 
-  app.ws('/path/ws', (req, ws) => {
+  app.ws('/path/ws', async (req, res) => {
+    const ws = await res.accept();
     ws.on('message', (msg) => {
       ws.send(`echo ${msg}`);
     });

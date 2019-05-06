@@ -1,6 +1,6 @@
 {
   "name": "websocket-express",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "express and ws combined",
   "files": [
     "build/**/*"
@@ -30,17 +30,17 @@
   "homepage": "https://github.com/davidje13/websocket-express#readme",
   "dependencies": {
     "express": "^4.16.4",
-    "ws": "^6.2.1"
+    "ws": "^7.0.0"
   },
   "devDependencies": {
-    "@neutrinojs/airbnb-base": "^9.0.0-rc.0",
-    "@neutrinojs/jest": "^9.0.0-rc.0",
-    "@neutrinojs/library": "^9.0.0-rc.0",
-    "eslint": "^5.15.3",
-    "jest": "^24.5.0",
-    "neutrino": "^9.0.0-rc.0",
-    "superwstest": "git+https://github.com/davidje13/superwstest.git#semver:^1.0.1",
-    "webpack": "^4.29.6",
-    "webpack-cli": "^3.3.0"
+    "@neutrinojs/airbnb-base": "^9.0.0-rc.1",
+    "@neutrinojs/jest": "^9.0.0-rc.1",
+    "@neutrinojs/library": "^9.0.0-rc.1",
+    "eslint": "^5.16.0",
+    "jest": "^24.8.0",
+    "neutrino": "^9.0.0-rc.1",
+    "superwstest": "git+https://github.com/davidje13/superwstest.git#semver:^1.0.3",
+    "webpack": "^4.30.0",
+    "webpack-cli": "^3.3.2"
   }
 }

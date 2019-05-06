@@ -1,9 +1,8 @@
 import http from 'http';
 import express from 'express';
 import WebSocket from 'ws';
+import WebSocketWrapper from './WebSocketWrapper';
 import wrapHandlers, { wrapNonWebsocket } from './wrapHandlers';
-
-const noop = () => {};
 
 const FORWARDED_EXPRESS_METHODS = [
   'enable',
@@ -22,15 +21,6 @@ const FORWARDED_HTTP_MIDDLEWARE = [
   'urlencoded',
 ];
 
-function wrapWSResponse(websocket) {
-  return {
-    websocket,
-    // compatibility with expressjs (fake http.Response API)
-    setHeader: noop,
-    end: noop,
-  };
-}
-
 export default class WebSocketExpress {
   constructor() {
     this.app = express();
@@ -39,15 +29,14 @@ export default class WebSocketExpress {
 
     this.app.use((err, req, res, next) => {
       // error handler: close web socket
-      if (res.websocket) {
-        res.websocket.close(1011, 'Internal Error');
+      if (WebSocketWrapper.isInstance(res)) {
+        res.sendError(500);
       }
       next(err);
     });
 
     this.handleUpgrade = this.handleUpgrade.bind(this);
     this.handleRequest = this.handleRequest.bind(this);
-    this.has404 = false;
 
     FORWARDED_EXPRESS_METHODS.forEach((method) => {
       this[method] = this.app[method].bind(this.app);
@@ -57,9 +46,8 @@ export default class WebSocketExpress {
   }
 
   handleUpgrade(req, socket, head) {
-    this.wsServer.handleUpgrade(req, socket, head, (websocket) => {
-      this.app(req, wrapWSResponse(websocket));
-    });
+    const wrap = new WebSocketWrapper(this.wsServer, req, socket, head);
+    return this.app(req, wrap);
   }
 
   handleRequest(req, res) {
@@ -67,17 +55,6 @@ export default class WebSocketExpress {
   }
 
   attach(server) {
-    if (!this.has404) {
-      this.has404 = true;
-      this.app.use((req, res, next) => {
-        // 404 handler: close web socket (must be last handler)
-        if (res.websocket) {
-          res.websocket.close(4404, 'Not Found');
-        } else {
-          next();
-        }
-      });
-    }
     server.on('upgrade', this.handleUpgrade);
     server.on('request', this.handleRequest);
   }

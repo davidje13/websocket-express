@@ -13,7 +13,7 @@ and supports asynchronous operations in all locations.
 ## Install dependency
 
 ```bash
-npm install --save git+https://github.com/davidje13/websocket-express.git#semver:^1.0.2
+npm install --save git+https://github.com/davidje13/websocket-express.git#semver:^1.1.0
 ```
 
 ## Usage
@@ -25,17 +25,30 @@ const app = new WebSocketExpress();
 const router = new Router();
 
 // Simple usage:
-router.ws('/path/foo', (req, ws) => {
+router.ws('/path/foo', async (req, res) => {
+  const ws = await res.accept();
   ws.on('message', (msg) => {
     ws.send(`echo ${msg}`);
   });
   ws.send('hello');
 });
 
+router.ws('/path/bar', async (req, res) => {
+  const ws = await res.accept();
+
+  ws.send('who are you?');
+
+  const message = await ws.nextMessage({ timeout: 1000 });
+  ws.send(`hello, ${message}`);
+
+  ws.close();
+});
+
 // Asynchronous accept/reject:
-router.ws('/path/ws-async', async (req, ws, next) => {
+router.ws('/path/ws-async', async (req, res, next) => {
   const acceptable = await myAsynchronousOperation();
   if (acceptable) {
+    const ws = await res.accept();
     ws.send('hello');
   } else {
     next();
@@ -74,12 +87,12 @@ app.use(WebSocketExpress.static(myDirectory));
 ## API
 
 The main method is `Router.ws`. This accepts a (possibly asynchronous)
-function with 3 parameters; the request, the websocket, and a `next`
+function with 3 parameters; the request, the response, and a `next`
 callback to be invoked if the request is rejected for any reason.
 
-If the request is accepted, the function should attach `message` and
-`close` event listeners and can continue to handle the WebSocket as
-normal.
+If the request is accepted, the function should call `accept` to get a
+WebSocket, attach `message` and `close` event listeners and can
+continue to handle the WebSocket as normal.
 
 If the request is rejected, `next` should be called (possibly with an
 error description), and the next possible handler, or the error
@@ -87,6 +100,8 @@ handler, will be called (according to the standard express logic).
 
 If no handlers are able to accept a WebSocket request, it will be
 closed (with code 4404 by default).
+
+If an exception is thrown, the socket will be closed with code 1011.
 
 As with `get` / `post` / etc. it is possible to register a WebSocket
 handler under the same URL as a non-websocket handler.
@@ -111,3 +126,11 @@ handler under the same URL as a non-websocket handler.
 
 - `App.detach` will remove all attached event listeners from the given
   server.
+
+The returned WebSocket has some additional helper methods:
+
+- `ws.nextMessage` will return a promise which resolves with the next
+  message received by the websocket. If the socket closes before a
+  message arrives, the promise will be rejected. You can also specify
+  a timeout (with `nextMessage({ timeout: millis })`) to reject if no
+  message is received within the requested time.

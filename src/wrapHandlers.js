@@ -1,12 +1,13 @@
 import http from 'http';
+import WebSocketWrapper from './WebSocketWrapper';
 
 function wrapWebsocket(fn) {
   if (typeof fn !== 'function') {
     return fn;
   }
   return (req, res, next) => {
-    if (res.websocket) {
-      fn(req, res.websocket, next);
+    if (WebSocketWrapper.isInstance(res)) {
+      fn(req, res, next);
     } else {
       next('route');
     }
@@ -18,10 +19,10 @@ export function wrapNonWebsocket(fn) {
     return fn;
   }
   return (req, res, next) => {
-    if (!res.websocket) {
-      fn(req, res, next);
-    } else {
+    if (WebSocketWrapper.isInstance(res)) {
       next('route');
+    } else {
+      fn(req, res, next);
     }
   };
 }

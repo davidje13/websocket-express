@@ -2,7 +2,7 @@ import path from 'path';
 import request from 'superwstest';
 import WebSocketExpress from './WebSocketExpress';
 
-export default function makeTestServer() {
+function makeTestServer() {
   const app = new WebSocketExpress();
   app.use(WebSocketExpress.static(path.join(__dirname, 'test-static')));
   return app.createServer();
@@ -31,6 +31,6 @@ describe('WebSocketExpress static', () => {
   it('does not respond to websocket connections', async () => {
     await request(server)
       .ws('/foo.txt')
-      .expectClosed();
+      .expectConnectionError(404);
   });
 });
