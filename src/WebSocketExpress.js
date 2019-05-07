@@ -22,8 +22,8 @@ const FORWARDED_HTTP_MIDDLEWARE = [
 ];
 
 export default class WebSocketExpress {
-  constructor() {
-    this.app = express();
+  constructor(...args) {
+    this.app = express(...args);
     this.locals = this.app.locals;
     this.wsServer = new WebSocket.Server({ noServer: true });
 
