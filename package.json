@@ -1,6 +1,6 @@
 {
   "name": "websocket-express",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "express and ws combined",
   "files": [
     "build/**/*"
