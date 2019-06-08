@@ -1,6 +1,5 @@
 import request from 'superwstest';
-import WebSocketExpress from './index';
-import Router from './Router';
+import WebSocketExpress, { Router, isWebSocket } from '.';
 
 function sleep(millis) {
   return new Promise((resolve) => setTimeout(resolve, millis));
@@ -29,6 +28,15 @@ export default function makeTestServer() {
   router.ws('/path/multi', async (req, res) => {
     const ws = await res.accept();
     ws.send('ws');
+  });
+
+  router.use('/path/all-in-one', async (req, res) => {
+    if (isWebSocket(res)) {
+      const ws = await res.accept();
+      ws.send('ws');
+    } else {
+      res.send('http');
+    }
   });
 
   router.ws('/path/reject-ws', (req, res, next) => {
@@ -147,7 +155,7 @@ describe('WebSocketExpress routing', () => {
   });
 
   describe('multiple routes on same URL', () => {
-    it('responds to HTTP connections', async () => {
+    it('uses dedicated handlers for HTTP connections', async () => {
       const response = await request(server)
         .get('/path/multi')
         .expect(200);
@@ -155,9 +163,25 @@ describe('WebSocketExpress routing', () => {
       expect(response.text).toEqual('http');
     });
 
-    it('responds to websocket connections', async () => {
+    it('uses dedicated handlers for websocket connections', async () => {
       await request(server)
         .ws('/path/multi')
+        .expectText('ws')
+        .close()
+        .expectClosed();
+    });
+
+    it('uses shared handlers for HTTP connections', async () => {
+      const response = await request(server)
+        .get('/path/all-in-one')
+        .expect(200);
+
+      expect(response.text).toEqual('http');
+    });
+
+    it('uses shared handlers for websocket connections', async () => {
+      await request(server)
+        .ws('/path/all-in-one')
         .expectText('ws')
         .close()
         .expectClosed();

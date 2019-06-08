@@ -1,7 +1,13 @@
 import WebSocketExpress from './WebSocketExpress';
-import WSRouter from './Router';
+import WebSocketWrapper from './WebSocketWrapper';
+import Router from './Router';
 
-WebSocketExpress.Router = WSRouter;
+export const isWebSocket = WebSocketWrapper.isInstance;
+
+WebSocketExpress.Router = Router;
+WebSocketExpress.isWebSocket = isWebSocket;
 
 export default WebSocketExpress;
-export const Router = WSRouter;
+export {
+  Router,
+};

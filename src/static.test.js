@@ -1,6 +1,6 @@
 import path from 'path';
 import request from 'superwstest';
-import WebSocketExpress from './index';
+import WebSocketExpress from '.';
 
 function makeTestServer() {
   const app = new WebSocketExpress();
