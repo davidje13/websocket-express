@@ -3,30 +3,26 @@ import { STATUS_CODES } from 'http';
 const NONCE = {};
 
 // Copied from https://github.com/websockets/ws/blob/master/lib/websocket-server.js#L374
-/* eslint-disable no-param-reassign, comma-dangle, prefer-template */
 function abortHandshake(socket, code, message, headers) {
   if (socket.writable) {
-    message = message || STATUS_CODES[code];
-    headers = {
+    const resolvedMessage = message || STATUS_CODES[code];
+    const resolvedHeaders = {
       Connection: 'close',
       'Content-type': 'text/html',
-      'Content-Length': Buffer.byteLength(message),
-      ...headers
+      'Content-Length': Buffer.byteLength(resolvedMessage),
+      ...headers,
     };
 
-    socket.write(
-      `HTTP/1.1 ${code} ${STATUS_CODES[code]}\r\n` +
-        Object.keys(headers)
-          .map((h) => `${h}: ${headers[h]}`)
-          .join('\r\n') +
-        '\r\n\r\n' +
-        message
-    );
+    socket.write([
+      `HTTP/1.1 ${code} ${STATUS_CODES[code]}`,
+      ...Object.keys(resolvedHeaders).map((h) => `${h}: ${resolvedHeaders[h]}`),
+      '',
+      resolvedMessage,
+    ].join('\r\n'));
   }
 
   socket.destroy();
 }
-/* eslint-enable no-param-reassign, comma-dangle, prefer-template */
 
 function httpStatusToWs(code) {
   if (code >= 500) {
