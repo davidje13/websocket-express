@@ -1,5 +1,5 @@
 import request from 'superwstest';
-import WebSocketExpress from './WebSocketExpress';
+import WebSocketExpress from './index';
 import Router from './Router';
 
 function sleep(millis) {
@@ -20,6 +20,15 @@ export default function makeTestServer() {
       ws.send(`echo ${msg}`);
     });
     ws.send('hello');
+  });
+
+  router.get('/path/multi', (req, res) => {
+    res.send('http');
+  });
+
+  router.ws('/path/multi', async (req, res) => {
+    const ws = await res.accept();
+    ws.send('ws');
   });
 
   router.ws('/path/reject-ws', (req, res, next) => {
@@ -134,6 +143,24 @@ describe('WebSocketExpress routing', () => {
       await request(server)
         .ws('/path/explicit-reject-ws-async')
         .expectConnectionError(500);
+    });
+  });
+
+  describe('multiple routes on same URL', () => {
+    it('responds to HTTP connections', async () => {
+      const response = await request(server)
+        .get('/path/multi')
+        .expect(200);
+
+      expect(response.text).toEqual('http');
+    });
+
+    it('responds to websocket connections', async () => {
+      await request(server)
+        .ws('/path/multi')
+        .expectText('ws')
+        .close()
+        .expectClosed();
     });
   });
 });
