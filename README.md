@@ -13,7 +13,7 @@ and supports asynchronous operations in all locations.
 ## Install dependency
 
 ```bash
-npm install --save git+https://github.com/davidje13/websocket-express.git#semver:^1.1.1
+npm install --save git+https://github.com/davidje13/websocket-express.git#semver:^1.2.0
 ```
 
 ## Usage
