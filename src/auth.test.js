@@ -9,9 +9,10 @@ import {
 
 function makeTestServer() {
   const app = new WebSocketExpress();
+  let server = null;
 
   app.use('/simple', requireBearerAuth(
-    'foo',
+    'some-realm',
     (token) => {
       if (token.startsWith('valid-')) {
         return JSON.parse(token.substr(6));
@@ -31,9 +32,19 @@ function makeTestServer() {
     res.send(`data is ${getAuthData(res)}`);
   });
 
+  app.ws('/simple/hold', async (req, res) => {
+    const ws = await res.accept();
+    ws.on('close', () => {
+      server.closeCallCount += 1;
+    });
+    ws.send('holding');
+  });
+
   app.use('/simple', (req, res) => res.send('content'));
 
-  return app.createServer();
+  server = app.createServer();
+  server.closeCallCount = 0;
+  return server;
 }
 
 describe('WebSocketExpress authentication middleware', () => {
@@ -117,6 +128,48 @@ describe('WebSocketExpress authentication middleware', () => {
           .expectText('content');
       });
 
+      it('rejects tokens which are expired', async () => {
+        await request(server)
+          .ws('/simple/hold', {
+            headers: { Authorization: 'Bearer valid-{"exp": 1}' },
+          })
+          .expectConnectionError(401);
+      });
+
+      it('rejects tokens which are not valid yet', async () => {
+        const nbf = Math.ceil(Date.now() / 1000) + 10;
+        await request(server)
+          .ws('/simple/hold', {
+            headers: { Authorization: `Bearer valid-{"nbf": ${nbf}}` },
+          })
+          .expectConnectionError(401);
+      });
+
+      it('closes the connection when the token expires', async () => {
+        const exp = Math.ceil((Date.now() + 200) / 1000);
+        await request(server)
+          .ws('/simple/hold', {
+            headers: { Authorization: `Bearer valid-{"exp": ${exp}}` },
+          })
+          .expectText('holding')
+          .expectClosed(1001, 'Session expired');
+
+        expect(server.closeCallCount).toEqual(1);
+      });
+
+      it('ignores token expiry if connection is already closed', async () => {
+        const exp = Math.ceil((Date.now() + 200) / 1000);
+        await request(server)
+          .ws('/simple/hold', {
+            headers: { Authorization: `Bearer valid-{"exp": ${exp}}` },
+          })
+          .expectText('holding')
+          .close()
+          .wait(1300);
+
+        expect(server.closeCallCount).toEqual(1);
+      });
+
       it('rejects users without required scope', async () => {
         await request(server)
           .ws('/simple/scoped', {
@@ -151,6 +204,44 @@ describe('WebSocketExpress authentication middleware', () => {
           .ws('/simple')
           .send('valid-{}')
           .expectText('content');
+      });
+
+      it('rejects tokens which are expired', async () => {
+        await request(server)
+          .ws('/simple/hold')
+          .send('valid-{"exp": 1}')
+          .expectClosed(4401);
+      });
+
+      it('rejects tokens which are not valid yet', async () => {
+        const nbf = Math.ceil(Date.now() / 1000) + 10;
+        await request(server)
+          .ws('/simple/hold')
+          .send(`valid-{"nbf": ${nbf}}`)
+          .expectClosed(4401);
+      });
+
+      it('closes the connection when the token expires', async () => {
+        const exp = Math.ceil((Date.now() + 200) / 1000);
+        await request(server)
+          .ws('/simple/hold')
+          .send(`valid-{"exp": ${exp}}`)
+          .expectText('holding')
+          .expectClosed(1001, 'Session expired');
+
+        expect(server.closeCallCount).toEqual(1);
+      });
+
+      it('ignores token expiry if connection is already closed', async () => {
+        const exp = Math.ceil((Date.now() + 200) / 1000);
+        await request(server)
+          .ws('/simple/hold')
+          .send(`valid-{"exp": ${exp}}`)
+          .expectText('holding')
+          .close()
+          .wait(1300);
+
+        expect(server.closeCallCount).toEqual(1);
       });
 
       it('rejects users without required scope', async () => {

@@ -60,6 +60,7 @@ export function requireBearerAuth(realm, extractAndValidateToken) {
   }
 
   return async (req, res, next) => {
+    const now = Math.floor(Date.now() / 1000);
     const authRealm = await realmForRequest(req, res);
     const token = await getProvidedToken(req, res);
 
@@ -68,12 +69,20 @@ export function requireBearerAuth(realm, extractAndValidateToken) {
       tokenData = await extractAndValidateToken(token, authRealm, req, res);
     }
 
-    if (!tokenData) {
+    if (
+      !tokenData ||
+      (typeof tokenData.nbf === 'number' && now < tokenData.nbf) ||
+      (typeof tokenData.exp === 'number' && now >= tokenData.exp)
+    ) {
       res
         .status(401)
         .header('WWW-Authenticate', `Bearer realm="${authRealm}"`)
         .end();
       return;
+    }
+
+    if (typeof tokenData.exp === 'number') {
+      res.closeAtTime(tokenData.exp * 1000, 1001, 'Session expired');
     }
 
     res.locals.authRealm = authRealm;

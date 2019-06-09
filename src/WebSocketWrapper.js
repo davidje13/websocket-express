@@ -76,11 +76,14 @@ export default class WebSocketWrapper {
     this.ws = null;
     this.closed = false;
     this.nonce = NONCE;
+    this.closeTimeout = null;
+    this.closeTime = 0;
 
     // expressjs builds new objects using properties of response, so all methods
     // must be explicitly added to the instance, not just the class
     this.accept = this.accept;
     this.reject = this.reject;
+    this.closeAtTime = this.closeAtTime;
     this.sendError = this.sendError;
     this.setHeader = () => {}; // compatibility with expressjs (fake http.Response API)
     this.status = this.status;
@@ -108,6 +111,12 @@ export default class WebSocketWrapper {
       this.head,
       (ws) => {
         bindExtraMethods(ws);
+        ws.on('close', () => {
+          if (this.closeTimeout) {
+            clearTimeout(this.closeTimeout);
+            this.closeTimeout = null;
+          }
+        });
         this.ws = ws;
         resolve(this.ws);
       },
@@ -134,6 +143,29 @@ export default class WebSocketWrapper {
     } else {
       abortHandshake(this.socket, httpStatus, msg);
     }
+  }
+
+  closeAtTime(time, code = 1001, message = '') {
+    if (this.closed) {
+      return;
+    }
+    if (this.closeTimeout !== null) {
+      if (time >= this.closeTime) {
+        return;
+      }
+      clearTimeout(this.closeTimeout);
+    }
+    this.closeTime = time;
+    this.closeTimeout = setTimeout(() => {
+      if (!this.closed) {
+        this.closed = true;
+        if (this.ws) {
+          this.ws.close(code, message);
+        } else {
+          abortHandshake(this.socket, 200, 'Connection time limit reached');
+        }
+      }
+    }, time - Date.now());
   }
 
   status(code) {
