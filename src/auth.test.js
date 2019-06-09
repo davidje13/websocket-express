@@ -1,6 +1,11 @@
 import request from 'superwstest';
 import WebSocketExpress from './WebSocketExpress';
-import { requireBearerAuth, hasAuthScope, requireAuthScope } from './auth';
+import {
+  requireBearerAuth,
+  getAuthData,
+  hasAuthScope,
+  requireAuthScope,
+} from './auth';
 
 function makeTestServer() {
   const app = new WebSocketExpress();
@@ -18,6 +23,12 @@ function makeTestServer() {
   app.use('/simple/scoped', requireAuthScope('my-scope'));
   app.use('/simple/has-scope', (req, res) => {
     res.send(`s1: ${hasAuthScope(res, 's1')}`);
+  });
+  app.use('/simple/data', (req, res) => {
+    res.send(`foo is ${getAuthData(res).foo}`);
+  });
+  app.use('/noauth/data', (req, res) => {
+    res.send(`data is ${getAuthData(res)}`);
   });
 
   app.use('/simple', (req, res) => res.send('content'));
@@ -75,7 +86,7 @@ describe('WebSocketExpress authentication middleware', () => {
     it('accepts users with required scope', async () => {
       await request(server)
         .get('/simple/scoped')
-        .set('Authorization', 'Bearer valid-{"my-scope":true}')
+        .set('Authorization', 'Bearer valid-{"scopes":{"my-scope":true}}')
         .expect(200);
     });
   });
@@ -117,7 +128,9 @@ describe('WebSocketExpress authentication middleware', () => {
       it('accepts users with required scope', async () => {
         await request(server)
           .ws('/simple/scoped', {
-            headers: { Authorization: 'Bearer valid-{"my-scope":true}' },
+            headers: {
+              Authorization: 'Bearer valid-{"scopes":{"my-scope":true}}',
+            },
           })
           .expectText('content');
       });
@@ -150,9 +163,26 @@ describe('WebSocketExpress authentication middleware', () => {
       it('accepts users with required scope', async () => {
         await request(server)
           .ws('/simple/scoped')
-          .send('valid-{"my-scope":true}')
+          .send('valid-{"scopes":{"my-scope":true}}')
           .expectText('content');
       });
+    });
+  });
+
+  describe('getAuthData', () => {
+    it('returns the parsed auth data', async () => {
+      const response = await request(server)
+        .get('/simple/data')
+        .set('Authorization', 'Bearer valid-{"foo":"bar"}');
+
+      expect(response.text).toEqual('foo is bar');
+    });
+
+    it('returns null if no auth data is available', async () => {
+      const response = await request(server)
+        .get('/noauth/data');
+
+      expect(response.text).toEqual('data is null');
     });
   });
 
@@ -160,7 +190,7 @@ describe('WebSocketExpress authentication middleware', () => {
     it('returns true if the user has the requested scope', async () => {
       const response = await request(server)
         .get('/simple/has-scope')
-        .set('Authorization', 'Bearer valid-{"s1":true}');
+        .set('Authorization', 'Bearer valid-{"scopes":{"s1":true}}');
 
       expect(response.text).toEqual('s1: true');
     });
@@ -168,7 +198,15 @@ describe('WebSocketExpress authentication middleware', () => {
     it('returns false if the requested scope is not set', async () => {
       const response = await request(server)
         .get('/simple/has-scope')
-        .set('Authorization', 'Bearer valid-{"s2":true}');
+        .set('Authorization', 'Bearer valid-{"scopes":{"s2":true}}');
+
+      expect(response.text).toEqual('s1: false');
+    });
+
+    it('returns false if no scopes are set', async () => {
+      const response = await request(server)
+        .get('/simple/has-scope')
+        .set('Authorization', 'Bearer valid-{}');
 
       expect(response.text).toEqual('s1: false');
     });

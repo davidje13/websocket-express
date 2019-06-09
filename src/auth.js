@@ -28,10 +28,11 @@ async function getProvidedToken(req, res) {
   return null;
 }
 
-function scopesMap(scopes) {
-  if (!scopes) {
-    return null;
+function extractScopesMap(data) {
+  if (!data || typeof data !== 'object' || !data.scopes) {
+    return {};
   }
+  const { scopes } = data;
   if (Array.isArray(scopes)) {
     const result = {};
     scopes.forEach((scope) => {
@@ -48,7 +49,7 @@ function scopesMap(scopes) {
   return {};
 }
 
-export function requireBearerAuth(realm, scopesForToken) {
+export function requireBearerAuth(realm, extractAndValidateToken) {
   let realmForRequest;
   if (typeof realm === 'string') {
     realmForRequest = () => realm;
@@ -62,10 +63,12 @@ export function requireBearerAuth(realm, scopesForToken) {
     const authRealm = await realmForRequest(req, res);
     const token = await getProvidedToken(req, res);
 
-    const authScopes = token ?
-      scopesMap(await scopesForToken(token, authRealm, req, res)) :
-      null;
-    if (!authScopes) {
+    let tokenData = null;
+    if (token) {
+      tokenData = await extractAndValidateToken(token, authRealm, req, res);
+    }
+
+    if (!tokenData) {
       res
         .status(401)
         .header('WWW-Authenticate', `Bearer realm="${authRealm}"`)
@@ -74,17 +77,23 @@ export function requireBearerAuth(realm, scopesForToken) {
     }
 
     res.locals.authRealm = authRealm;
-    res.locals.authScopes = authScopes;
+    res.locals.authData = tokenData;
+    res.locals.authScopes = extractScopesMap(tokenData);
 
     next();
   };
 }
 
+export function getAuthData(res) {
+  if (!res || typeof res !== 'object' || !res.locals) {
+    throw new Error('Must provide response object to getAuthData');
+  }
+  return res.locals.authData || null;
+}
+
 export function hasAuthScope(res, scope) {
-  if (!res || typeof res === 'string' || !res.locals) {
-    throw new Error(
-      'Must specify response object as first parameter to hasAuthScope',
-    );
+  if (!res || typeof res !== 'object' || !res.locals) {
+    throw new Error('Must provide response object to hasAuthScope');
   }
   const { authScopes } = res.locals;
   return Boolean(authScopes && authScopes[scope]);
