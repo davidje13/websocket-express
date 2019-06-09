@@ -25,15 +25,13 @@ export default function makeTestServer() {
     res.send('http');
   });
 
-  router.ws('/path/multi', async (req, res) => {
-    const ws = await res.accept();
-    ws.send('ws');
+  router.ws('/path/multi', (req, res) => {
+    res.send('ws');
   });
 
-  router.use('/path/all-in-one', async (req, res) => {
+  router.use('/path/all-in-one', (req, res) => {
     if (isWebSocket(res)) {
-      const ws = await res.accept();
-      ws.send('ws');
+      res.send('ws');
     } else {
       res.send('http');
     }

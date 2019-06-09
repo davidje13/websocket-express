@@ -85,6 +85,7 @@ export default class WebSocketWrapper {
     this.setHeader = () => {}; // compatibility with expressjs (fake http.Response API)
     this.status = this.status;
     this.end = this.end;
+    this.send = this.send;
   }
 
   static isInstance(o) {
@@ -94,11 +95,11 @@ export default class WebSocketWrapper {
   }
 
   accept() {
-    if (this.ws) {
-      return Promise.reject(new Error('Already accepted WebSocket connection'));
-    }
     if (this.closed) {
       return Promise.reject(new Error('Connection closed'));
+    }
+    if (this.ws) {
+      return Promise.resolve(this.ws);
     }
 
     return new Promise((resolve) => this.wsServer.handleUpgrade(
@@ -136,12 +137,28 @@ export default class WebSocketWrapper {
   }
 
   status(code) {
-    this.reject(code);
+    if (code < 400 && this.ws) {
+      throw new Error('Already accepted WebSocket connection');
+    }
+    this.sendError(code);
+    return this;
   }
 
   end() {
     if (!this.ws && !this.closed) {
       this.sendError(404);
     }
+    return this;
+  }
+
+  send(message) {
+    if (!this.closed) {
+      this.accept().then((ws) => {
+        ws.send(message);
+        ws.close();
+      });
+      this.closed = true;
+    }
+    return this;
   }
 }
