@@ -81,7 +81,7 @@ export function requireBearerAuth(realm, extractAndValidateToken) {
       return;
     }
 
-    if (typeof tokenData.exp === 'number') {
+    if (typeof tokenData.exp === 'number' && WebSocketWrapper.isInstance(res)) {
       res.closeAtTime(tokenData.exp * 1000, 1001, 'Session expired');
     }
 

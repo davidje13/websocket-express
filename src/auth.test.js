@@ -87,6 +87,29 @@ describe('WebSocketExpress authentication middleware', () => {
         .expect(200);
     });
 
+    it('rejects tokens which are expired', async () => {
+      await request(server)
+        .get('/simple')
+        .set('Authorization', 'Bearer valid-{"exp": 1}')
+        .expect(401);
+    });
+
+    it('rejects tokens which are not valid yet', async () => {
+      const nbf = Math.ceil(Date.now() / 1000) + 10;
+      await request(server)
+        .get('/simple')
+        .set('Authorization', `Bearer valid-{"nbf": ${nbf}}`)
+        .expect(401);
+    });
+
+    it('ignores expiry times in the future', async () => {
+      const exp = Math.ceil(Date.now() / 1000) + 10;
+      await request(server)
+        .get('/simple')
+        .set('Authorization', `Bearer valid-{"exp": ${exp}}`)
+        .expect(200);
+    });
+
     it('rejects users without required scope', async () => {
       await request(server)
         .get('/simple/scoped')
