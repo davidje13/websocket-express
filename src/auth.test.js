@@ -255,6 +255,14 @@ describe('WebSocketExpress authentication middleware', () => {
         expect(server.closeCallCount).toEqual(1);
       });
 
+      it('allows expiry far into the future', async () => {
+        const exp = Math.ceil(Date.now() / 1000) + 60 * 60 * 24 * 365;
+        await request(server)
+          .ws('/simple/hold')
+          .send(`valid-{"exp": ${exp}}`)
+          .expectText('holding');
+      });
+
       it('ignores token expiry if connection is already closed', async () => {
         const exp = Math.ceil((Date.now() + 200) / 1000);
         await request(server)

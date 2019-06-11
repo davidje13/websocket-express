@@ -78,6 +78,8 @@ export default class WebSocketWrapper {
     this.nonce = NONCE;
     this.closeTimeout = null;
     this.closeTime = 0;
+    this.closeTimeoutCode = null;
+    this.closeTimeoutMessage = null;
 
     // expressjs builds new objects using properties of response, so all methods
     // must be explicitly added to the instance, not just the class
@@ -89,6 +91,7 @@ export default class WebSocketWrapper {
     this.status = this.status;
     this.end = this.end;
     this.send = this.send;
+    this.internalCheckCloseTimeout = this.internalCheckCloseTimeout;
   }
 
   static isInstance(o) {
@@ -111,12 +114,7 @@ export default class WebSocketWrapper {
       this.head,
       (ws) => {
         bindExtraMethods(ws);
-        ws.on('close', () => {
-          if (this.closeTimeout) {
-            clearTimeout(this.closeTimeout);
-            this.closeTimeout = null;
-          }
-        });
+        ws.on('close', () => clearTimeout(this.closeTimeout));
         this.ws = ws;
         resolve(this.ws);
       },
@@ -145,27 +143,41 @@ export default class WebSocketWrapper {
     }
   }
 
+  internalCheckCloseTimeout() {
+    clearTimeout(this.closeTimeout);
+
+    if (this.closed) {
+      return;
+    }
+
+    const now = Date.now();
+    if (now < this.closeTime) {
+      this.closeTimeout = setTimeout(
+        this.internalCheckCloseTimeout.bind(this),
+        Math.min(this.closeTime - now, 1000 * 60 * 60 * 24),
+      );
+      return;
+    }
+
+    this.closed = true;
+    if (this.ws) {
+      this.ws.close(this.closeTimeoutCode, this.closeTimeoutMessage);
+    } else {
+      abortHandshake(this.socket, 200, 'Connection time limit reached');
+    }
+  }
+
   closeAtTime(time, code = 1001, message = '') {
     if (this.closed) {
       return;
     }
-    if (this.closeTimeout !== null) {
-      if (time >= this.closeTime) {
-        return;
-      }
-      clearTimeout(this.closeTimeout);
+    if (this.closeTimeout !== null && time >= this.closeTime) {
+      return;
     }
     this.closeTime = time;
-    this.closeTimeout = setTimeout(() => {
-      if (!this.closed) {
-        this.closed = true;
-        if (this.ws) {
-          this.ws.close(code, message);
-        } else {
-          abortHandshake(this.socket, 200, 'Connection time limit reached');
-        }
-      }
-    }, time - Date.now());
+    this.closeTimeoutCode = code;
+    this.closeTimeoutMessage = message;
+    this.internalCheckCloseTimeout();
   }
 
   status(code) {
