@@ -1,9 +1,10 @@
 declare module 'websocket-express' {
   import { Server } from 'http';
   import * as WebSocket from 'ws';
-  import {
+  import express, {
     Request,
     Response,
+    IRouterHandler,
     IRouterMatcher,
     NextFunction,
     RequestHandler,
@@ -72,7 +73,7 @@ declare module 'websocket-express' {
 
   interface Router extends IRouter<any> {
     ws: WSRouterMatcher<this>;
-    useHTTP: IRouterMatcher<this>;
+    useHTTP: IRouterHandler<this> & IRouterMatcher<this>;
   }
 
   class Router {
@@ -80,8 +81,8 @@ declare module 'websocket-express' {
   }
 
   interface WebSocketExpress extends Express {
-    ws: IRouterMatcher<this>;
-    useHTTP: IRouterMatcher<this>;
+    ws: WSRouterMatcher<this>;
+    useHTTP: IRouterHandler<this> & IRouterMatcher<this>;
 
     attach(server: Server): void;
     detach(server: Server): void;
@@ -89,9 +90,23 @@ declare module 'websocket-express' {
   }
 
   class WebSocketExpress {
-    public static urlencoded(options?: { extended?: boolean }): RequestHandler;
+    public static static: typeof express.static;
 
-    public static json(options?: { limit?: number }): RequestHandler;
+    public static json: typeof express.json;
+
+    public static urlencoded: typeof express.urlencoded;
+
+    public static isWebSocket: typeof isWebSocket;
+
+    public static Router: typeof Router;
+
+    public static requireBearerAuth: typeof requireBearerAuth;
+
+    public static requireAuthScope: typeof requireAuthScope;
+
+    public static getAuthData: typeof getAuthData;
+
+    public static hasAuthScope: typeof hasAuthScope;
   }
 
   export { Router, WebSocket };
