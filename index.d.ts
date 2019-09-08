@@ -24,10 +24,13 @@ declare module 'websocket-express' {
   export function isWebSocket(res: Response): res is WSResponse;
 
   export interface JWTPayload {
+    iss?: string;
+    iat?: number;
     nbf?: number;
     exp?: number;
     sub?: string;
     aud?: string;
+    jti?: string;
     scopes?: string[] | { [scope: string]: boolean } | string;
   }
 
