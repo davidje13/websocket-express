@@ -76,10 +76,12 @@ export default class WebSocketWrapper {
     this.ws = null;
     this.closed = false;
     this.nonce = NONCE;
+    this.transactionNesting = 0;
     this.closeTimeout = null;
     this.closeTime = 0;
     this.closeTimeoutCode = null;
     this.closeTimeoutMessage = null;
+    this.softClosing = false;
 
     // expressjs builds new objects using properties of response, so all methods
     // must be explicitly added to the instance, not just the class
@@ -91,7 +93,10 @@ export default class WebSocketWrapper {
     this.status = this.status;
     this.end = this.end;
     this.send = this.send;
+    this.beginTransaction = this.beginTransaction;
+    this.endTransaction = this.endTransaction;
     this.internalCheckCloseTimeout = this.internalCheckCloseTimeout;
+    this.internalSoftClose = this.internalSoftClose;
   }
 
   static isInstance(o) {
@@ -204,5 +209,35 @@ export default class WebSocketWrapper {
       this.closed = true;
     }
     return this;
+  }
+
+  beginTransaction() {
+    this.transactionNesting += 1;
+  }
+
+  endTransaction() {
+    if (this.transactionNesting <= 0) {
+      throw new Error('Unbalanced endTransaction');
+    }
+    this.transactionNesting -= 1;
+
+    if (this.transactionNesting === 0 && this.softClosing && !this.closed) {
+      this.sendError(500, 1012, 'server shutdown');
+    }
+  }
+
+  internalSoftClose(limit) {
+    if (this.closed) {
+      return;
+    }
+
+    if (this.transactionNesting > 0) {
+      this.softClosing = true;
+      if (limit) {
+        this.closeAtTime(limit, 1012, 'server shutdown');
+      }
+    } else {
+      this.sendError(500, 1012, 'server shutdown');
+    }
   }
 }

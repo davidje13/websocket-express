@@ -19,6 +19,8 @@ declare module 'websocket-express' {
     sendError(httpStatus: number, wsStatus?: number | null, message?: string | null): void;
     closeAtTime(time: number, code?: number, message?: string): void;
     send(message: string): this;
+    beginTransaction(): void;
+    endTransaction(): void;
   }
 
   export function isWebSocket(res: Response): res is WSResponse;

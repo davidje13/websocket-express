@@ -26,6 +26,7 @@ export default class WebSocketExpress {
     this.app = express(...args);
     this.locals = this.app.locals;
     this.wsServer = new WebSocket.Server({ noServer: true });
+    this.activeWebSockets = new Set();
 
     this.app.use((err, req, res, next) => {
       // error handler: close web socket
@@ -47,6 +48,8 @@ export default class WebSocketExpress {
 
   handleUpgrade(req, socket, head) {
     const wrap = new WebSocketWrapper(this.wsServer, req, socket, head);
+    this.activeWebSockets.add(wrap);
+    socket.on('close', () => this.activeWebSockets.delete(wrap));
     return this.app(req, wrap);
   }
 
@@ -57,6 +60,19 @@ export default class WebSocketExpress {
   attach(server) {
     server.on('upgrade', this.handleUpgrade);
     server.on('request', this.handleRequest);
+
+    const originalClose = server.close.bind(server);
+
+    /* eslint-disable-next-line no-param-reassign */ // close interception
+    server.close = (callback) => {
+      const shutdownTimeout = this.app.get('shutdown timeout');
+      let expiry = 0;
+      if (typeof shutdownTimeout === 'number' && shutdownTimeout >= 0) {
+        expiry = Date.now() + shutdownTimeout;
+      }
+      [...this.activeWebSockets].forEach((s) => s.internalSoftClose(expiry));
+      originalClose(callback);
+    };
   }
 
   detach(server) {

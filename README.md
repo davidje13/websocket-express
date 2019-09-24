@@ -55,6 +55,26 @@ router.ws('/path/ws-async', async (req, res, next) => {
   }
 });
 
+// Transactions:
+router.ws('/path/transactional', async (req, res) => {
+  const ws = await res.accept();
+
+  res.beginTransaction();
+  ws.send('hello');
+  ws.send('this is a long series of messages');
+  ws.send('and all messages will be sent');
+  ws.send('even if the server is asked to close()');
+  ws.send('although they may be stopped if the server crashes');
+
+  await myAsynchronousOperation();
+
+  ws.send('still included');
+  res.endTransaction();
+
+  ws.send('this message might not be included');
+  ws.send('because the transaction has finished');
+});
+
 // Full Router API of express is supported too:
 router.get('/path/foo', (req, res) => {
   res.end('response to a normal HTTP GET request');
@@ -65,6 +85,11 @@ app.use(router);
 
 // useHTTP allows attaching middleware only to HTTP requests:
 app.useHTTP(middleware);
+
+// the setting 'shutdown timeout' can be set to automatically close
+// WebSocket connections after a delay, even if they are in a
+// transaction
+app.set('shutdown timeout', 1000);
 
 const server = app.createServer();
 server.listen(8080);
@@ -126,6 +151,10 @@ handler under the same URL as a non-websocket handler.
 
 - `App.detach` will remove all attached event listeners from the given
   server.
+
+- `App.set('shutdown timeout', millis)` configures a timeout (in
+  milliseconds) used by `close()`, after which connections will be
+  forced to close even if they are in a transaction.
 
 The returned WebSocket has some additional helper methods:
 
