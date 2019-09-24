@@ -21,12 +21,34 @@ const FORWARDED_HTTP_MIDDLEWARE = [
   'urlencoded',
 ];
 
+function addPreCloseEvent(server) {
+  if (server.close.hasPreCloseEvent) {
+    return;
+  }
+
+  const originalClose = server.close.bind(server);
+  const wrappedClose = (callback) => {
+    server.emit('pre-close', server);
+    originalClose(callback);
+  };
+  wrappedClose.hasPreCloseEvent = true;
+
+  /* eslint-disable-next-line no-param-reassign */ // close interception
+  server.close = wrappedClose;
+}
+
+function bindWithOriginalThis(fn, thisArg) {
+  return function wrapped(...args) {
+    return fn.call(thisArg, this, ...args);
+  };
+}
+
 export default class WebSocketExpress {
   constructor(...args) {
     this.app = express(...args);
     this.locals = this.app.locals;
     this.wsServer = new WebSocket.Server({ noServer: true });
-    this.activeWebSockets = new Set();
+    this.activeWebSockets = new WeakMap();
 
     this.app.use((err, req, res, next) => {
       // error handler: close web socket
@@ -36,8 +58,9 @@ export default class WebSocketExpress {
       next(err);
     });
 
-    this.handleUpgrade = this.handleUpgrade.bind(this);
+    this.handleUpgrade = bindWithOriginalThis(this.handleUpgrade, this);
     this.handleRequest = this.handleRequest.bind(this);
+    this.handlePreClose = this.handlePreClose.bind(this);
 
     FORWARDED_EXPRESS_METHODS.forEach((method) => {
       this[method] = this.app[method].bind(this.app);
@@ -46,10 +69,13 @@ export default class WebSocketExpress {
     wrapHandlers(this, this.app);
   }
 
-  handleUpgrade(req, socket, head) {
+  handleUpgrade(server, req, socket, head) {
     const wrap = new WebSocketWrapper(this.wsServer, req, socket, head);
-    this.activeWebSockets.add(wrap);
-    socket.on('close', () => this.activeWebSockets.delete(wrap));
+
+    const socketSet = this.activeWebSockets.get(server);
+    socketSet.add(wrap);
+    socket.on('close', () => socketSet.delete(wrap));
+
     return this.app(req, wrap);
   }
 
@@ -57,27 +83,36 @@ export default class WebSocketExpress {
     return this.app(req, res);
   }
 
+  handlePreClose(server) {
+    let expiry = 0;
+    const shutdownTimeout = this.app.get('shutdown timeout');
+    if (typeof shutdownTimeout === 'number' && shutdownTimeout >= 0) {
+      expiry = Date.now() + shutdownTimeout;
+    }
+    const socketSet = this.activeWebSockets.get(server);
+    [...socketSet].forEach((s) => s.internalSoftClose(expiry));
+  }
+
   attach(server) {
+    if (this.activeWebSockets.has(server)) {
+      throw new Error('Cannot attach to the same server multiple times');
+    }
+    this.activeWebSockets.set(server, new Set());
+    addPreCloseEvent(server);
     server.on('upgrade', this.handleUpgrade);
     server.on('request', this.handleRequest);
-
-    const originalClose = server.close.bind(server);
-
-    /* eslint-disable-next-line no-param-reassign */ // close interception
-    server.close = (callback) => {
-      const shutdownTimeout = this.app.get('shutdown timeout');
-      let expiry = 0;
-      if (typeof shutdownTimeout === 'number' && shutdownTimeout >= 0) {
-        expiry = Date.now() + shutdownTimeout;
-      }
-      [...this.activeWebSockets].forEach((s) => s.internalSoftClose(expiry));
-      originalClose(callback);
-    };
+    server.on('pre-close', this.handlePreClose);
   }
 
   detach(server) {
+    if (!this.activeWebSockets.has(server)) {
+      return; // not attached
+    }
     server.removeListener('upgrade', this.handleUpgrade);
     server.removeListener('request', this.handleRequest);
+    server.removeListener('pre-close', this.handlePreClose);
+    this.handlePreClose(server);
+    this.activeWebSockets.delete(server);
   }
 
   createServer() {
