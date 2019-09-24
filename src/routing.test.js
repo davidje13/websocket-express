@@ -5,7 +5,7 @@ function sleep(millis) {
   return new Promise((resolve) => setTimeout(resolve, millis));
 }
 
-export default function makeTestServer() {
+function makeTestServer() {
   const app = new WebSocketExpress();
   const router = new Router();
 
