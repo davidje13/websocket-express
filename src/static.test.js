@@ -13,7 +13,7 @@ describe('WebSocketExpress static', () => {
 
   beforeEach((done) => {
     server = makeTestServer();
-    server.listen(0, done);
+    server.listen(0, 'localhost', done);
   });
 
   afterEach((done) => {

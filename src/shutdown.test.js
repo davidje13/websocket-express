@@ -35,7 +35,7 @@ describe('server.close', () => {
   beforeEach((done) => {
     const app = makeTestApp();
     server = app.createServer();
-    server.listen(0, done);
+    server.listen(0, 'localhost', done);
   });
 
   afterEach((done) => {
@@ -77,7 +77,7 @@ describe('app.detach', () => {
     app = makeTestApp();
     server = http.createServer();
     app.attach(server);
-    server.listen(0, done);
+    server.listen(0, 'localhost', done);
   });
 
   afterEach((done) => {
@@ -109,7 +109,7 @@ describe('app.detach', () => {
 
     beforeEach((done) => {
       server2 = app.createServer();
-      server2.listen(0, done);
+      server2.listen(0, 'localhost', done);
     });
 
     afterEach((done) => {
@@ -134,7 +134,7 @@ describe('server.close with "shutdown timeout" set', () => {
     const app = makeTestApp();
     app.set('shutdown timeout', 500);
     server = app.createServer();
-    server.listen(0, done);
+    server.listen(0, 'localhost', done);
   });
 
   afterEach((done) => {
