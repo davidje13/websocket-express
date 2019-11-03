@@ -31,20 +31,20 @@
   },
   "homepage": "https://github.com/davidje13/websocket-express#readme",
   "dependencies": {
-    "@types/express": "^4.17.1",
+    "@types/express": "^4.17.2",
     "@types/ws": "^6.0.3",
     "express": "^4.17.1",
-    "ws": "^7.1.2"
+    "ws": "^7.2.0"
   },
   "devDependencies": {
     "@neutrinojs/airbnb-base": "^9.0.0-rc.4",
     "@neutrinojs/jest": "^9.0.0-rc.4",
     "@neutrinojs/library": "^9.0.0-rc.4",
-    "eslint": "^6.5.1",
+    "eslint": "^6.6.0",
     "jest": "^24.9.0",
     "neutrino": "^9.0.0-rc.4",
     "superwstest": "git+https://github.com/davidje13/superwstest.git#semver:^1.0.8",
-    "webpack": "^4.41.0",
-    "webpack-cli": "^3.3.9"
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.10"
   }
 }

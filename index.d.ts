@@ -76,7 +76,7 @@ declare module 'websocket-express' {
     (path: PathParams, ...handlers: WSRequestHandlerParams[]): T;
   }
 
-  interface Router extends IRouter<any> {
+  interface Router extends IRouter {
     ws: WSRouterMatcher<this>;
     useHTTP: IRouterHandler<this> & IRouterMatcher<this>;
   }
