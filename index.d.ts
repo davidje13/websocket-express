@@ -51,7 +51,7 @@ declare module 'websocket-express' {
   export function getAuthData(res: Response): JWTPayload;
   export function hasAuthScope(res: Response, scope: string): boolean;
 
-  type WSRequestHandler = (
+  export type WSRequestHandler = (
     req: Request,
     res: WSResponse,
     next: NextFunction,
