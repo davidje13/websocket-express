@@ -12,6 +12,7 @@ declare module 'websocket-express' {
     RouterOptions,
     Express,
   } from 'express';
+  import { Params, ParamsDictionary } from 'express-serve-static-core';
 
   export interface WSResponse extends Response {
     accept(): Promise<WebSocket>;
@@ -36,44 +37,44 @@ declare module 'websocket-express' {
     scopes?: string[] | { [scope: string]: boolean } | string;
   }
 
-  type TokenExtractor = (
+  type TokenExtractor<P extends Params = ParamsDictionary> = (
     token: string,
     authRealm: string,
-    req: Request,
+    req: Request<P>,
     res: Response,
   ) => (Promise<JWTPayload | null> | JWTPayload | null);
 
-  export function requireBearerAuth(
-    realm: ((req: Request, res: Response) => string) | string,
-    extractAndValidateToken: TokenExtractor,
-  ): RequestHandler;
-  export function requireAuthScope(scope: string): RequestHandler;
+  export function requireBearerAuth<P extends Params = ParamsDictionary>(
+    realm: ((req: Request<P>, res: Response) => string) | string,
+    extractAndValidateToken: TokenExtractor<P>,
+  ): RequestHandler<P>;
+  export function requireAuthScope(scope: string): RequestHandler<any>;
   export function getAuthData(res: Response): JWTPayload;
   export function hasAuthScope(res: Response, scope: string): boolean;
 
-  export type WSRequestHandler = (
-    req: Request,
+  export type WSRequestHandler<P extends Params = ParamsDictionary> = (
+    req: Request<P>,
     res: WSResponse,
     next: NextFunction,
   ) => any;
 
-  export type WSErrorRequestHandler = (
+  export type WSErrorRequestHandler<P extends Params = ParamsDictionary> = (
     err: any,
-    req: Request,
+    req: Request<P>,
     res: WSResponse,
     next: NextFunction,
   ) => any;
 
-  export type WSRequestHandlerParams =
-    WSRequestHandler |
-    WSErrorRequestHandler |
-    (WSRequestHandler | WSErrorRequestHandler)[];
+  export type WSRequestHandlerParams<P extends Params = ParamsDictionary> =
+    WSRequestHandler<P> |
+    WSErrorRequestHandler<P> |
+    (WSRequestHandler<P> | WSErrorRequestHandler<P>)[];
 
   export type PathParams = string | RegExp | (string | RegExp)[];
 
   export interface WSRouterMatcher<T> {
-    (path: PathParams, ...handlers: WSRequestHandler[]): T;
-    (path: PathParams, ...handlers: WSRequestHandlerParams[]): T;
+    <P extends Params = ParamsDictionary>(path: PathParams, ...handlers: WSRequestHandler<P>[]): T;
+    <P extends Params = ParamsDictionary>(path: PathParams, ...handlers: WSRequestHandlerParams<P>[]): T;
   }
 
   interface Router extends IRouter {
