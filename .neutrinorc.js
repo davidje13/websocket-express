@@ -14,6 +14,7 @@ module.exports = {
           'arrow-parens': ['error', 'always'],
           'operator-linebreak': ['error', 'after'],
           'no-self-assign': ['off'],
+          'jest/expect-expect': ['off'],
         },
       },
     }),
