@@ -33,4 +33,10 @@ describe('WebSocketExpress static', () => {
       .ws('/foo.txt')
       .expectConnectionError(404);
   });
+
+  it('includes mime types', async () => {
+    const htmlType = WebSocketExpress.static.mime.lookup('a.html');
+
+    expect(htmlType).toEqual('text/html');
+  });
 });

@@ -131,4 +131,5 @@ FORWARDED_HTTP_MIDDLEWARE.forEach((middleware) => {
   WebSocketExpress[middleware] = (...args) => wrapNonWebsocket(
     express[middleware](...args),
   );
+  Object.assign(WebSocketExpress[middleware], express[middleware]);
 });
