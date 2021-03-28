@@ -62,9 +62,8 @@ function nextMessage(ws, { timeout = 0 } = {}) {
 }
 
 function bindExtraMethods(ws) {
-  /* eslint-disable no-param-reassign */
+  // eslint-disable-next-line no-param-reassign
   ws.nextMessage = nextMessage.bind(null, ws);
-  /* eslint-enable no-param-reassign */
 }
 
 export default class WebSocketWrapper {
