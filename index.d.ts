@@ -14,8 +14,21 @@ declare module 'websocket-express' {
   } from 'express';
   import { Params, ParamsDictionary } from 'express-serve-static-core';
 
+  interface NextMessageOptions {
+    timeout?: number | undefined;
+  }
+
+  interface WebSocketMessage {
+    data: Buffer;
+    isBinary: boolean;
+  }
+
+  interface WebSocketExtension {
+    nextMessage(options?: NextMessageOptions): Promise<WebSocketMessage>;
+  }
+
   export interface WSResponse extends Response {
-    accept(): Promise<WebSocket>;
+    accept(): Promise<WebSocket & WebSocketExtension>;
     reject(code?: number, message?: string | null): void;
     sendError(httpStatus: number, wsStatus?: number | null, message?: string | null): void;
     closeAtTime(time: number, code?: number, message?: string): void;
