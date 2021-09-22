@@ -22,7 +22,11 @@ async function getProvidedToken(req, res) {
 
   if (WebSocketWrapper.isInstance(res)) {
     const ws = await res.accept();
-    return ws.nextMessage({ timeout: 5000 });
+    const tokenMessage = await ws.nextMessage({ timeout: 5000 });
+    if (tokenMessage.isBinary) {
+      throw new Error('Token must be sent as text');
+    }
+    return String(tokenMessage.data);
   }
 
   return null;

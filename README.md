@@ -44,7 +44,7 @@ router.ws('/path/bar', async (req, res) => {
   ws.send('who are you?');
 
   const message = await ws.nextMessage({ timeout: 1000 });
-  ws.send(`hello, ${message}`);
+  ws.send(`hello, ${message.data}`);
 
   ws.close();
 });
@@ -171,3 +171,9 @@ The returned WebSocket has some additional helper methods:
   message arrives, the promise will be rejected. You can also specify
   a timeout (with `nextMessage({ timeout: millis })`) to reject if no
   message is received within the requested time.
+
+  The object returned by `nextMessage` has a `data` element (a
+  `String` if using `ws` 7.x and the message is text, or a `Buffer`
+  if the message is binary, or if using `ws` 8.x), and an `isBinary`
+  boolean. You can use `String(message.data)` to convert the `Buffer`
+  to a string using UTF8 encoding, matching `ws` 7.x's behaviour.

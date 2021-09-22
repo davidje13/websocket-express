@@ -33,9 +33,9 @@
   "homepage": "https://github.com/davidje13/websocket-express#readme",
   "peerDependencies": {
     "@types/express": "4.x || 5.x",
-    "@types/ws": "7.x",
+    "@types/ws": "7.x || 8.x",
     "express": "4.x || 5.x",
-    "ws": "7.x"
+    "ws": "7.x || 8.x"
   },
   "devDependencies": {
     "@neutrinojs/airbnb-base": "9.x",
@@ -49,6 +49,6 @@
     "superwstest": "1.x",
     "webpack": "4.x",
     "webpack-cli": "3.x",
-    "ws": "7.x"
+    "ws": "8.x"
   }
 }

@@ -43,9 +43,15 @@ function nextMessage(ws, { timeout = 0 } = {}) {
       clearTimeout(exp);
     };
 
-    onMessage = (msg) => {
+    onMessage = (data, isBinary) => {
       detach();
-      resolve(msg);
+      if (isBinary !== undefined) { // ws 8.x
+        resolve({ data, isBinary });
+      } else if (typeof data === 'string') { // ws 7.x
+        resolve({ data: Buffer.from(data, 'utf8'), isBinary: false });
+      } else {
+        resolve({ data, isBinary: true });
+      }
     };
 
     onClose = () => {
