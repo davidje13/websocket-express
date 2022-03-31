@@ -13,12 +13,16 @@ function abortHandshake(socket, code, message, headers) {
       ...headers,
     };
 
-    socket.write([
-      `HTTP/1.1 ${code} ${STATUS_CODES[code]}`,
-      ...Object.keys(resolvedHeaders).map((h) => `${h}: ${resolvedHeaders[h]}`),
-      '',
-      resolvedMessage,
-    ].join('\r\n'));
+    socket.write(
+      [
+        `HTTP/1.1 ${code} ${STATUS_CODES[code]}`,
+        ...Object.keys(resolvedHeaders).map(
+          (h) => `${h}: ${resolvedHeaders[h]}`,
+        ),
+        '',
+        resolvedMessage,
+      ].join('\r\n'),
+    );
   }
 
   socket.destroy();
@@ -45,9 +49,11 @@ function nextMessage(ws, { timeout = 0 } = {}) {
 
     onMessage = (data, isBinary) => {
       detach();
-      if (isBinary !== undefined) { // ws 8.x
+      if (isBinary !== undefined) {
+        // ws 8.x
         resolve({ data, isBinary });
-      } else if (typeof data === 'string') { // ws 7.x
+      } else if (typeof data === 'string') {
+        // ws 7.x
         resolve({ data: Buffer.from(data, 'utf8'), isBinary: false });
       } else {
         resolve({ data, isBinary: true });
@@ -107,7 +113,7 @@ export default class WebSocketWrapper {
   static isInstance(o) {
     // expressjs builds new objects using properties of response, so we cannot
     // rely on instanceof checks. Instead we use a nonce property:
-    return o && (o.nonce === NONCE);
+    return o && o.nonce === NONCE;
   }
 
   accept() {
@@ -118,17 +124,14 @@ export default class WebSocketWrapper {
       return Promise.resolve(this.ws);
     }
 
-    return new Promise((resolve) => this.wsServer.handleUpgrade(
-      this.req,
-      this.socket,
-      this.head,
-      (ws) => {
+    return new Promise((resolve) =>
+      this.wsServer.handleUpgrade(this.req, this.socket, this.head, (ws) => {
         bindExtraMethods(ws);
         ws.on('close', () => clearTimeout(this.closeTimeout));
         this.ws = ws;
         resolve(this.ws);
-      },
-    ));
+      }),
+    );
   }
 
   reject(code = 500, message = null) {

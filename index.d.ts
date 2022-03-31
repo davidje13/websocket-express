@@ -30,7 +30,11 @@ declare module 'websocket-express' {
   export interface WSResponse extends Response {
     accept(): Promise<WebSocket & WebSocketExtension>;
     reject(code?: number, message?: string | null): void;
-    sendError(httpStatus: number, wsStatus?: number | null, message?: string | null): void;
+    sendError(
+      httpStatus: number,
+      wsStatus?: number | null,
+      message?: string | null,
+    ): void;
     closeAtTime(time: number, code?: number, message?: string): void;
     send(message: string): this;
     beginTransaction(): void;
@@ -55,7 +59,7 @@ declare module 'websocket-express' {
     authRealm: string,
     req: Request<P>,
     res: Response,
-  ) => (Promise<JWTPayload | null> | JWTPayload | null);
+  ) => Promise<JWTPayload | null> | JWTPayload | null;
 
   export function requireBearerAuth<P extends Params = ParamsDictionary>(
     realm: ((req: Request<P>, res: Response) => string) | string,
@@ -79,15 +83,21 @@ declare module 'websocket-express' {
   ) => any;
 
   export type WSRequestHandlerParams<P extends Params = ParamsDictionary> =
-    WSRequestHandler<P> |
-    WSErrorRequestHandler<P> |
-    (WSRequestHandler<P> | WSErrorRequestHandler<P>)[];
+    | WSRequestHandler<P>
+    | WSErrorRequestHandler<P>
+    | (WSRequestHandler<P> | WSErrorRequestHandler<P>)[];
 
   export type PathParams = string | RegExp | (string | RegExp)[];
 
   export interface WSRouterMatcher<T> {
-    <P extends Params = ParamsDictionary>(path: PathParams, ...handlers: WSRequestHandler<P>[]): T;
-    <P extends Params = ParamsDictionary>(path: PathParams, ...handlers: WSRequestHandlerParams<P>[]): T;
+    <P extends Params = ParamsDictionary>(
+      path: PathParams,
+      ...handlers: WSRequestHandler<P>[]
+    ): T;
+    <P extends Params = ParamsDictionary>(
+      path: PathParams,
+      ...handlers: WSRequestHandlerParams<P>[]
+    ): T;
   }
 
   interface Router extends IRouter {

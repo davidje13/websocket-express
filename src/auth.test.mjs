@@ -1,25 +1,26 @@
 import request from 'superwstest';
-import WebSocketExpress from './WebSocketExpress';
+import WebSocketExpress from './WebSocketExpress.mjs';
 import {
   requireBearerAuth,
   getAuthData,
   hasAuthScope,
   requireAuthScope,
-} from './auth';
+} from './auth.mjs';
+import runServer from './runServer.mjs';
 
 function makeTestServer() {
   const app = new WebSocketExpress();
   let server = null;
 
-  app.use('/simple', requireBearerAuth(
-    'some-realm',
-    (token) => {
+  app.use(
+    '/simple',
+    requireBearerAuth('some-realm', (token) => {
       if (token.startsWith('valid-')) {
         return JSON.parse(token.substr(6));
       }
       return null;
-    },
-  ));
+    }),
+  );
 
   app.use('/simple/scoped', requireAuthScope('my-scope'));
   app.use('/simple/has-scope', (req, res) => {
@@ -50,20 +51,14 @@ function makeTestServer() {
 describe('WebSocketExpress authentication middleware', () => {
   let server;
 
-  beforeEach((done) => {
+  beforeEach(() => {
     server = makeTestServer();
-    server.listen(0, 'localhost', done);
-  });
-
-  afterEach((done) => {
-    server.close(done);
+    return runServer(server);
   });
 
   describe('http', () => {
     it('rejects unauthenticated requests', async () => {
-      await request(server)
-        .get('/simple')
-        .expect(401);
+      await request(server).get('/simple').expect(401);
     });
 
     it('rejects unknown authentication schemes', async () => {
@@ -301,8 +296,7 @@ describe('WebSocketExpress authentication middleware', () => {
     });
 
     it('returns null if no auth data is available', async () => {
-      const response = await request(server)
-        .get('/noauth/data');
+      const response = await request(server).get('/noauth/data');
 
       expect(response.text).toEqual('data is null');
     });

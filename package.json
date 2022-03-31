@@ -9,11 +9,9 @@
   "main": "build/index.js",
   "types": "index.d.ts",
   "scripts": {
-    "build": "webpack --mode production",
-    "lint": "eslint --format codeframe --ext mjs,jsx,js src",
-    "test": "jest",
-    "posttest": "npm run lint",
-    "test:watch": "jest --watch"
+    "build": "rollup --config rollup.config.js",
+    "format": "prettier --write .",
+    "test": "lean-test --parallel-suites && npm run build && packagetest/run.sh && prettier --check ."
   },
   "repository": {
     "type": "git",
@@ -34,21 +32,19 @@
   "peerDependencies": {
     "@types/express": "4.x || 5.x",
     "@types/ws": "7.x || 8.x",
-    "express": "4.x || ~5.0.0-alpha.1 || 5.x",
+    "express": "4.x || ~5.0.0-alpha.1 || ~5.0.0-beta.1 || 5.x",
     "ws": "7.x || 8.x"
   },
   "devDependencies": {
-    "@neutrinojs/airbnb-base": "9.x",
-    "@neutrinojs/jest": "9.x",
-    "@neutrinojs/library": "9.x",
+    "@babel/preset-env": "7.x",
+    "@rollup/plugin-babel": "5.x",
     "@types/express": "4.x || 5.x",
-    "eslint": "7.x",
-    "express": "5.0.0-alpha.8",
-    "jest": "26.x",
-    "neutrino": "9.x",
-    "superwstest": "1.x",
-    "webpack": "4.x",
-    "webpack-cli": "3.x",
+    "express": "5.0.0-beta.1",
+    "lean-test": "1.x",
+    "prettier": "2.6.1",
+    "rollup": "2.x",
+    "supertest": "6.x",
+    "superwstest": "2.x",
     "ws": "8.x"
   }
 }

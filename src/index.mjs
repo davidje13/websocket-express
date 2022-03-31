@@ -1,12 +1,12 @@
-import WebSocketExpress from './WebSocketExpress';
-import WebSocketWrapper from './WebSocketWrapper';
-import Router from './Router';
+import WebSocketExpress from './WebSocketExpress.mjs';
+import WebSocketWrapper from './WebSocketWrapper.mjs';
+import Router from './Router.mjs';
 import {
   requireBearerAuth,
   requireAuthScope,
   getAuthData,
   hasAuthScope,
-} from './auth';
+} from './auth.mjs';
 
 export const isWebSocket = WebSocketWrapper.isInstance;
 

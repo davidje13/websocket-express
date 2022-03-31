@@ -1,2 +1,613 @@
-!function(e,t){"object"==typeof exports&&"object"==typeof module?module.exports=t():"function"==typeof define&&define.amd?define("websocket-express",[],t):"object"==typeof exports?exports["websocket-express"]=t():e["websocket-express"]=t()}(global,(function(){return function(e){var t={};function s(n){if(t[n])return t[n].exports;var o=t[n]={i:n,l:!1,exports:{}};return e[n].call(o.exports,o,o.exports,s),o.l=!0,o.exports}return s.m=e,s.c=t,s.d=function(e,t,n){s.o(e,t)||Object.defineProperty(e,t,{enumerable:!0,get:n})},s.r=function(e){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})},s.t=function(e,t){if(1&t&&(e=s(e)),8&t)return e;if(4&t&&"object"==typeof e&&e&&e.__esModule)return e;var n=Object.create(null);if(s.r(n),Object.defineProperty(n,"default",{enumerable:!0,value:e}),2&t&&"string"!=typeof e)for(var o in e)s.d(n,o,function(t){return e[t]}.bind(null,o));return n},s.n=function(e){var t=e&&e.__esModule?function(){return e.default}:function(){return e};return s.d(t,"a",t),t},s.o=function(e,t){return Object.prototype.hasOwnProperty.call(e,t)},s.p="",s(s.s=3)}([function(e,t){e.exports=require("http")},function(e,t){e.exports=require("express")},function(e,t){e.exports=require("ws")},function(e,t,s){e.exports=s(4)},function(e,t,s){"use strict";s.r(t),s.d(t,"isWebSocket",(function(){return x})),s.d(t,"Router",(function(){return S})),s.d(t,"requireBearerAuth",(function(){return y})),s.d(t,"requireAuthScope",(function(){return E})),s.d(t,"getAuthData",(function(){return v})),s.d(t,"hasAuthScope",(function(){return C}));var n=s(0),o=s.n(n),r=s(1),i=s.n(r),c=s(2),a=s.n(c);const l={};function h(e,t,s,o){if(e.writable){const r=s||n.STATUS_CODES[t],i={Connection:"close","Content-type":"text/html","Content-Length":Buffer.byteLength(r),...o};e.write([`HTTP/1.1 ${t} ${n.STATUS_CODES[t]}`,...Object.keys(i).map(e=>`${e}: ${i[e]}`),"",r].join("\r\n"))}e.destroy()}function u(e,{timeout:t=0}={}){return new Promise((s,n)=>{let o=null,r=null,i=null;const c=()=>{e.off("message",o),e.off("close",r),clearTimeout(i)};o=(e,t)=>{c(),s(void 0!==t?{data:e,isBinary:t}:"string"==typeof e?{data:Buffer.from(e,"utf8"),isBinary:!1}:{data:e,isBinary:!0})},r=()=>{c(),n()},e.on("message",o),e.on("close",r),t>0&&(i=setTimeout(r,t))})}function d(e){e.nextMessage=u.bind(null,e)}class f{constructor(e,t,s,n){this.wsServer=e,this.req=t,this.socket=s,this.head=n,this.ws=null,this.closed=!1,this.nonce=l,this.transactionNesting=0,this.closeTimeout=null,this.closeTime=0,this.closeTimeoutCode=null,this.closeTimeoutMessage=null,this.softClosing=!1,this.accept=this.accept,this.reject=this.reject,this.closeAtTime=this.closeAtTime,this.sendError=this.sendError,this.setHeader=()=>{},this.status=this.status,this.end=this.end,this.send=this.send,this.beginTransaction=this.beginTransaction,this.endTransaction=this.endTransaction,this.internalCheckCloseTimeout=this.internalCheckCloseTimeout,this.internalSoftClose=this.internalSoftClose}static isInstance(e){return e&&e.nonce===l}accept(){return this.closed?Promise.reject(new Error("Connection closed")):this.ws?Promise.resolve(this.ws):new Promise(e=>this.wsServer.handleUpgrade(this.req,this.socket,this.head,t=>{d(t),t.on("close",()=>clearTimeout(this.closeTimeout)),this.ws=t,e(this.ws)}))}reject(e=500,t=null){if(this.ws)throw new Error("Already accepted WebSocket connection");this.sendError(e,null,t)}sendError(e,t=null,s=null){if(this.closed)throw new Error("Connection closed");const o=s||n.STATUS_CODES[e];var r;this.closed=!0,this.ws?this.ws.close(t||((r=e)>=500?1011:4e3+r),o):h(this.socket,e,o)}internalCheckCloseTimeout(){if(clearTimeout(this.closeTimeout),this.closed)return;const e=Date.now();e<this.closeTime?this.closeTimeout=setTimeout(this.internalCheckCloseTimeout.bind(this),Math.min(this.closeTime-e,864e5)):(this.closed=!0,this.ws?this.ws.close(this.closeTimeoutCode,this.closeTimeoutMessage):h(this.socket,200,"Connection time limit reached"))}closeAtTime(e,t=1001,s=""){this.closed||null!==this.closeTimeout&&e>=this.closeTime||(this.closeTime=e,this.closeTimeoutCode=t,this.closeTimeoutMessage=s,this.internalCheckCloseTimeout())}status(e){if(e<400&&this.ws)throw new Error("Already accepted WebSocket connection");return this.sendError(e),this}end(){return this.ws||this.closed||this.sendError(404),this}send(e){return this.closed||(this.accept().then(t=>{t.send(e),t.close()}),this.closed=!0),this}beginTransaction(){this.transactionNesting+=1}endTransaction(){if(this.transactionNesting<=0)throw new Error("Unbalanced endTransaction");this.transactionNesting-=1,0===this.transactionNesting&&this.softClosing&&!this.closed&&this.sendError(500,1012,"server shutdown")}internalSoftClose(e){this.closed||(this.transactionNesting>0?(this.softClosing=!0,e&&this.closeAtTime(e,1012,"server shutdown")):this.sendError(500,1012,"server shutdown"))}}function p(e){return"function"!=typeof e?e:(t,s,n)=>{f.isInstance(s)?e(t,s,n):n("route")}}function m(e){return"function"!=typeof e?e:(t,s,n)=>{f.isInstance(s)?n("route"):e(t,s,n)}}function b(e,t,s){const n=e,o=n[t].bind(n);n[t]=(...e)=>o(...e.map(s))}function w(e,t=null){const s=e;t&&(s.use=t.use.bind(t),o.a.METHODS.forEach(e=>{const n=e.toLowerCase();s[n]=t[n].bind(t)}),s.all=t.all.bind(t)),s.ws=s.use,b(s,"ws",p),s.useHTTP=s.use,b(s,"useHTTP",m),o.a.METHODS.forEach(e=>{b(s,e.toLowerCase(),m)}),b(s,"all",m)}const T=["enable","enabled","disable","disabled","set","get","engine","path"];class g{constructor(...e){var t,s;this.app=i()(...e),this.locals=this.app.locals,this.wsServer=new a.a.Server({noServer:!0}),this.activeWebSockets=new WeakMap,this.app.use((e,t,s,n)=>{f.isInstance(s)&&s.sendError(500),n(e)}),this.handleUpgrade=(t=this.handleUpgrade,s=this,function(...e){return t.call(s,this,...e)}),this.handleRequest=this.handleRequest.bind(this),this.handlePreClose=this.handlePreClose.bind(this),T.forEach(e=>{this[e]=this.app[e].bind(this.app)}),w(this,this.app)}handleUpgrade(e,t,s,n){const o=new f(this.wsServer,t,s,n),r=this.activeWebSockets.get(e);return r.add(o),s.on("close",()=>r.delete(o)),this.app(t,o)}handleRequest(e,t){return this.app(e,t)}handlePreClose(e){let t=0;const s=this.app.get("shutdown timeout");"number"==typeof s&&s>=0&&(t=Date.now()+s);[...this.activeWebSockets.get(e)].forEach(e=>e.internalSoftClose(t))}attach(e){if(this.activeWebSockets.has(e))throw new Error("Cannot attach to the same server multiple times");this.activeWebSockets.set(e,new Set),function(e){if(e.close.hasPreCloseEvent)return;const t=e.close.bind(e),s=s=>{e.emit("pre-close",e),t(s)};s.hasPreCloseEvent=!0,e.close=s}(e),e.on("upgrade",this.handleUpgrade),e.on("request",this.handleRequest),e.on("pre-close",this.handlePreClose)}detach(e){this.activeWebSockets.has(e)&&(e.removeListener("upgrade",this.handleUpgrade),e.removeListener("request",this.handleRequest),e.removeListener("pre-close",this.handlePreClose),this.handlePreClose(e),this.activeWebSockets.delete(e))}createServer(){const e=o.a.createServer();return this.attach(e),e}listen(...e){return this.createServer().listen(...e)}}["static","json","urlencoded"].forEach(e=>{g[e]=(...t)=>m(i.a[e](...t)),Object.assign(g[e],i.a[e])});class S extends i.a.Router{constructor(...e){super(...e),w(this)}}function y(e,t){let s;if("string"==typeof e)s=()=>e;else{if("function"!=typeof e)throw new Error("Invalid realm; must be a string or function");s=e}return async(e,n,o)=>{const r=Math.floor(Date.now()/1e3),i=await s(e,n),c=await async function(e,t){const s=e.get("Authorization");if(s){const[e,t]=function(e,t){const s=e.indexOf(t);return-1===s?[e]:[e.substr(0,s),e.substr(s+t.length)]}(s," ");return"Bearer"===e?t:null}if(f.isInstance(t)){const e=await t.accept(),s=await e.nextMessage({timeout:5e3});if(s.isBinary)throw new Error("Token must be sent as text");return String(s.data)}return null}(e,n);let a=null;c&&(a=await t(c,i,e,n)),!a||"number"==typeof a.nbf&&r<a.nbf||"number"==typeof a.exp&&r>=a.exp?n.status(401).header("WWW-Authenticate",`Bearer realm="${i}"`).end():("number"==typeof a.exp&&f.isInstance(n)&&n.closeAtTime(1e3*a.exp,1001,"Session expired"),n.locals.authRealm=i,n.locals.authData=a,n.locals.authScopes=function(e){if(!e||"object"!=typeof e||!e.scopes)return{};const{scopes:t}=e;if(Array.isArray(t)){const e={};return t.forEach(t=>{e[t]=!0}),e}return"object"==typeof t?t:"string"==typeof t?{[t]:!0}:{}}(a),o())}}function v(e){if(!e||"object"!=typeof e||!e.locals)throw new Error("Must provide response object to getAuthData");return e.locals.authData||null}function C(e,t){if(!e||"object"!=typeof e||!e.locals)throw new Error("Must provide response object to hasAuthScope");const{authScopes:s}=e.locals;return Boolean(s&&s[t])}function E(e){return async(t,s,n)=>{const{authRealm:o}=s.locals;C(s,e)?n():s.status(403).header("WWW-Authenticate",`Bearer realm="${o}", scope="${e}"`).end()}}const x=f.isInstance;g.Router=S,g.isWebSocket=x,g.requireBearerAuth=y,g.requireAuthScope=E,g.getAuthData=v,g.hasAuthScope=C;t.default=g}])}));
+'use strict';
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+var http = require('http');
+var express = require('express');
+var WebSocket = require('ws');
+
+function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
+
+var http__default = /*#__PURE__*/_interopDefaultLegacy(http);
+var express__default = /*#__PURE__*/_interopDefaultLegacy(express);
+var WebSocket__default = /*#__PURE__*/_interopDefaultLegacy(WebSocket);
+
+const NONCE = {}; // Copied from https://github.com/websockets/ws/blob/master/lib/websocket-server.js#L374
+
+function abortHandshake(socket, code, message, headers) {
+  if (socket.writable) {
+    const resolvedMessage = message || http.STATUS_CODES[code];
+    const resolvedHeaders = {
+      Connection: 'close',
+      'Content-type': 'text/html',
+      'Content-Length': Buffer.byteLength(resolvedMessage),
+      ...headers
+    };
+    socket.write([`HTTP/1.1 ${code} ${http.STATUS_CODES[code]}`, ...Object.keys(resolvedHeaders).map(h => `${h}: ${resolvedHeaders[h]}`), '', resolvedMessage].join('\r\n'));
+  }
+
+  socket.destroy();
+}
+
+function httpStatusToWs(code) {
+  if (code >= 500) {
+    return 1011;
+  }
+
+  return 4000 + code;
+}
+
+function nextMessage(ws, {
+  timeout = 0
+} = {}) {
+  return new Promise((resolve, reject) => {
+    let onMessage = null;
+    let onClose = null;
+    let exp = null;
+
+    const detach = () => {
+      ws.off('message', onMessage);
+      ws.off('close', onClose);
+      clearTimeout(exp);
+    };
+
+    onMessage = (data, isBinary) => {
+      detach();
+
+      if (isBinary !== undefined) {
+        // ws 8.x
+        resolve({
+          data,
+          isBinary
+        });
+      } else if (typeof data === 'string') {
+        // ws 7.x
+        resolve({
+          data: Buffer.from(data, 'utf8'),
+          isBinary: false
+        });
+      } else {
+        resolve({
+          data,
+          isBinary: true
+        });
+      }
+    };
+
+    onClose = () => {
+      detach();
+      reject();
+    };
+
+    ws.on('message', onMessage);
+    ws.on('close', onClose);
+
+    if (timeout > 0) {
+      exp = setTimeout(onClose, timeout);
+    }
+  });
+}
+
+function bindExtraMethods(ws) {
+  // eslint-disable-next-line no-param-reassign
+  ws.nextMessage = nextMessage.bind(null, ws);
+}
+
+class WebSocketWrapper {
+  constructor(wsServer, req, socket, head) {
+    this.wsServer = wsServer;
+    this.req = req;
+    this.socket = socket;
+    this.head = head;
+    this.ws = null;
+    this.closed = false;
+    this.nonce = NONCE;
+    this.transactionNesting = 0;
+    this.closeTimeout = null;
+    this.closeTime = 0;
+    this.closeTimeoutCode = null;
+    this.closeTimeoutMessage = null;
+    this.softClosing = false; // expressjs builds new objects using properties of response, so all methods
+    // must be explicitly added to the instance, not just the class
+
+    this.accept = this.accept;
+    this.reject = this.reject;
+    this.closeAtTime = this.closeAtTime;
+    this.sendError = this.sendError;
+
+    this.setHeader = () => {}; // compatibility with expressjs (fake http.Response API)
+
+
+    this.status = this.status;
+    this.end = this.end;
+    this.send = this.send;
+    this.beginTransaction = this.beginTransaction;
+    this.endTransaction = this.endTransaction;
+    this.internalCheckCloseTimeout = this.internalCheckCloseTimeout;
+    this.internalSoftClose = this.internalSoftClose;
+  }
+
+  static isInstance(o) {
+    // expressjs builds new objects using properties of response, so we cannot
+    // rely on instanceof checks. Instead we use a nonce property:
+    return o && o.nonce === NONCE;
+  }
+
+  accept() {
+    if (this.closed) {
+      return Promise.reject(new Error('Connection closed'));
+    }
+
+    if (this.ws) {
+      return Promise.resolve(this.ws);
+    }
+
+    return new Promise(resolve => this.wsServer.handleUpgrade(this.req, this.socket, this.head, ws => {
+      bindExtraMethods(ws);
+      ws.on('close', () => clearTimeout(this.closeTimeout));
+      this.ws = ws;
+      resolve(this.ws);
+    }));
+  }
+
+  reject(code = 500, message = null) {
+    if (this.ws) {
+      throw new Error('Already accepted WebSocket connection');
+    }
+
+    this.sendError(code, null, message);
+  }
+
+  sendError(httpStatus, wsStatus = null, message = null) {
+    if (this.closed) {
+      throw new Error('Connection closed');
+    }
+
+    const msg = message || http.STATUS_CODES[httpStatus];
+    this.closed = true;
+
+    if (this.ws) {
+      this.ws.close(wsStatus || httpStatusToWs(httpStatus), msg);
+    } else {
+      abortHandshake(this.socket, httpStatus, msg);
+    }
+  }
+
+  internalCheckCloseTimeout() {
+    clearTimeout(this.closeTimeout);
+
+    if (this.closed) {
+      return;
+    }
+
+    const now = Date.now();
+
+    if (now < this.closeTime) {
+      this.closeTimeout = setTimeout(this.internalCheckCloseTimeout.bind(this), Math.min(this.closeTime - now, 1000 * 60 * 60 * 24));
+      return;
+    }
+
+    this.closed = true;
+
+    if (this.ws) {
+      this.ws.close(this.closeTimeoutCode, this.closeTimeoutMessage);
+    } else {
+      abortHandshake(this.socket, 200, 'Connection time limit reached');
+    }
+  }
+
+  closeAtTime(time, code = 1001, message = '') {
+    if (this.closed) {
+      return;
+    }
+
+    if (this.closeTimeout !== null && time >= this.closeTime) {
+      return;
+    }
+
+    this.closeTime = time;
+    this.closeTimeoutCode = code;
+    this.closeTimeoutMessage = message;
+    this.internalCheckCloseTimeout();
+  }
+
+  status(code) {
+    if (code < 400 && this.ws) {
+      throw new Error('Already accepted WebSocket connection');
+    }
+
+    this.sendError(code);
+    return this;
+  }
+
+  end() {
+    if (!this.ws && !this.closed) {
+      this.sendError(404);
+    }
+
+    return this;
+  }
+
+  send(message) {
+    if (!this.closed) {
+      this.accept().then(ws => {
+        ws.send(message);
+        ws.close();
+      });
+      this.closed = true;
+    }
+
+    return this;
+  }
+
+  beginTransaction() {
+    this.transactionNesting += 1;
+  }
+
+  endTransaction() {
+    if (this.transactionNesting <= 0) {
+      throw new Error('Unbalanced endTransaction');
+    }
+
+    this.transactionNesting -= 1;
+
+    if (this.transactionNesting === 0 && this.softClosing && !this.closed) {
+      this.sendError(500, 1012, 'server shutdown');
+    }
+  }
+
+  internalSoftClose(limit) {
+    if (this.closed) {
+      return;
+    }
+
+    if (this.transactionNesting > 0) {
+      this.softClosing = true;
+
+      if (limit) {
+        this.closeAtTime(limit, 1012, 'server shutdown');
+      }
+    } else {
+      this.sendError(500, 1012, 'server shutdown');
+    }
+  }
+
+}
+
+function wrapWebsocket(fn) {
+  if (typeof fn !== 'function') {
+    return fn;
+  }
+
+  return (req, res, next) => {
+    if (WebSocketWrapper.isInstance(res)) {
+      fn(req, res, next);
+    } else {
+      next('route');
+    }
+  };
+}
+
+function wrapNonWebsocket(fn) {
+  if (typeof fn !== 'function') {
+    return fn;
+  }
+
+  return (req, res, next) => {
+    if (WebSocketWrapper.isInstance(res)) {
+      next('route');
+    } else {
+      fn(req, res, next);
+    }
+  };
+}
+
+function wrapHandler(o, method, wrapper) {
+  const target = o;
+  const original = target[method].bind(target);
+
+  target[method] = (...handlers) => original(...handlers.map(wrapper));
+}
+
+function wrapHandlers(o, src = null) {
+  const target = o;
+
+  if (src) {
+    target.use = src.use.bind(src);
+    http__default["default"].METHODS.forEach(method => {
+      const name = method.toLowerCase();
+      target[name] = src[name].bind(src);
+    });
+    target.all = src.all.bind(src);
+  }
+
+  target.ws = target.use;
+  wrapHandler(target, 'ws', wrapWebsocket);
+  target.useHTTP = target.use;
+  wrapHandler(target, 'useHTTP', wrapNonWebsocket);
+  http__default["default"].METHODS.forEach(method => {
+    wrapHandler(target, method.toLowerCase(), wrapNonWebsocket);
+  });
+  wrapHandler(target, 'all', wrapNonWebsocket);
+}
+
+const FORWARDED_EXPRESS_METHODS = ['enable', 'enabled', 'disable', 'disabled', 'set', 'get', 'engine', 'path'];
+const FORWARDED_HTTP_MIDDLEWARE = ['static', 'json', 'urlencoded'];
+
+function addPreCloseEvent(server) {
+  if (server.close.hasPreCloseEvent) {
+    return;
+  }
+
+  const originalClose = server.close.bind(server);
+
+  const wrappedClose = callback => {
+    server.emit('pre-close', server);
+    originalClose(callback);
+  };
+
+  wrappedClose.hasPreCloseEvent = true;
+  /* eslint-disable-next-line no-param-reassign */
+  // close interception
+
+  server.close = wrappedClose;
+}
+
+function bindWithOriginalThis(fn, thisArg) {
+  return function wrapped(...args) {
+    return fn.call(thisArg, this, ...args);
+  };
+}
+
+class WebSocketExpress {
+  constructor(...args) {
+    this.app = express__default["default"](...args);
+    this.locals = this.app.locals;
+    this.wsServer = new WebSocket__default["default"].Server({
+      noServer: true
+    });
+    this.activeWebSockets = new WeakMap();
+    this.app.use((err, req, res, next) => {
+      // error handler: close web socket
+      if (WebSocketWrapper.isInstance(res)) {
+        res.sendError(500);
+      }
+
+      next(err);
+    });
+    this.handleUpgrade = bindWithOriginalThis(this.handleUpgrade, this);
+    this.handleRequest = this.handleRequest.bind(this);
+    this.handlePreClose = this.handlePreClose.bind(this);
+    FORWARDED_EXPRESS_METHODS.forEach(method => {
+      this[method] = this.app[method].bind(this.app);
+    });
+    wrapHandlers(this, this.app);
+  }
+
+  handleUpgrade(server, req, socket, head) {
+    const wrap = new WebSocketWrapper(this.wsServer, req, socket, head);
+    const socketSet = this.activeWebSockets.get(server);
+    socketSet.add(wrap);
+    socket.on('close', () => socketSet.delete(wrap));
+    return this.app(req, wrap);
+  }
+
+  handleRequest(req, res) {
+    return this.app(req, res);
+  }
+
+  handlePreClose(server) {
+    let expiry = 0;
+    const shutdownTimeout = this.app.get('shutdown timeout');
+
+    if (typeof shutdownTimeout === 'number' && shutdownTimeout >= 0) {
+      expiry = Date.now() + shutdownTimeout;
+    }
+
+    const socketSet = this.activeWebSockets.get(server);
+    [...socketSet].forEach(s => s.internalSoftClose(expiry));
+  }
+
+  attach(server) {
+    if (this.activeWebSockets.has(server)) {
+      throw new Error('Cannot attach to the same server multiple times');
+    }
+
+    this.activeWebSockets.set(server, new Set());
+    addPreCloseEvent(server);
+    server.on('upgrade', this.handleUpgrade);
+    server.on('request', this.handleRequest);
+    server.on('pre-close', this.handlePreClose);
+  }
+
+  detach(server) {
+    if (!this.activeWebSockets.has(server)) {
+      return; // not attached
+    }
+
+    server.removeListener('upgrade', this.handleUpgrade);
+    server.removeListener('request', this.handleRequest);
+    server.removeListener('pre-close', this.handlePreClose);
+    this.handlePreClose(server);
+    this.activeWebSockets.delete(server);
+  }
+
+  createServer() {
+    const server = http__default["default"].createServer();
+    this.attach(server);
+    return server;
+  }
+
+  listen(...args) {
+    const server = this.createServer();
+    return server.listen(...args);
+  }
+
+}
+FORWARDED_HTTP_MIDDLEWARE.forEach(middleware => {
+  WebSocketExpress[middleware] = (...args) => wrapNonWebsocket(express__default["default"][middleware](...args));
+
+  Object.assign(WebSocketExpress[middleware], express__default["default"][middleware]);
+});
+
+class Router extends express__default["default"].Router {
+  constructor(...args) {
+    super(...args);
+    wrapHandlers(this);
+  }
+
+}
+
+function splitFirst(data, delimiter) {
+  const sep = data.indexOf(delimiter);
+
+  if (sep === -1) {
+    return [data];
+  }
+
+  return [data.substr(0, sep), data.substr(sep + delimiter.length)];
+}
+
+async function getProvidedToken(req, res) {
+  const auth = req.get('Authorization');
+
+  if (auth) {
+    const [type, data] = splitFirst(auth, ' ');
+
+    if (type === 'Bearer') {
+      return data;
+    }
+
+    return null;
+  }
+
+  if (WebSocketWrapper.isInstance(res)) {
+    const ws = await res.accept();
+    const tokenMessage = await ws.nextMessage({
+      timeout: 5000
+    });
+
+    if (tokenMessage.isBinary) {
+      throw new Error('Token must be sent as text');
+    }
+
+    return String(tokenMessage.data);
+  }
+
+  return null;
+}
+
+function extractScopesMap(data) {
+  if (!data || typeof data !== 'object' || !data.scopes) {
+    return {};
+  }
+
+  const {
+    scopes
+  } = data;
+
+  if (Array.isArray(scopes)) {
+    const result = {};
+    scopes.forEach(scope => {
+      result[scope] = true;
+    });
+    return result;
+  }
+
+  if (typeof scopes === 'object') {
+    return scopes;
+  }
+
+  if (typeof scopes === 'string') {
+    return {
+      [scopes]: true
+    };
+  }
+
+  return {};
+}
+
+function requireBearerAuth(realm, extractAndValidateToken) {
+  let realmForRequest;
+
+  if (typeof realm === 'string') {
+    realmForRequest = () => realm;
+  } else if (typeof realm === 'function') {
+    realmForRequest = realm;
+  } else {
+    throw new Error('Invalid realm; must be a string or function');
+  }
+
+  return async (req, res, next) => {
+    const now = Math.floor(Date.now() / 1000);
+    const authRealm = await realmForRequest(req, res);
+    const token = await getProvidedToken(req, res);
+    let tokenData = null;
+
+    if (token) {
+      tokenData = await extractAndValidateToken(token, authRealm, req, res);
+    }
+
+    if (!tokenData || typeof tokenData.nbf === 'number' && now < tokenData.nbf || typeof tokenData.exp === 'number' && now >= tokenData.exp) {
+      res.status(401).header('WWW-Authenticate', `Bearer realm="${authRealm}"`).end();
+      return;
+    }
+
+    if (typeof tokenData.exp === 'number' && WebSocketWrapper.isInstance(res)) {
+      res.closeAtTime(tokenData.exp * 1000, 1001, 'Session expired');
+    }
+
+    res.locals.authRealm = authRealm;
+    res.locals.authData = tokenData;
+    res.locals.authScopes = extractScopesMap(tokenData);
+    next();
+  };
+}
+function getAuthData(res) {
+  if (!res || typeof res !== 'object' || !res.locals) {
+    throw new Error('Must provide response object to getAuthData');
+  }
+
+  return res.locals.authData || null;
+}
+function hasAuthScope(res, scope) {
+  if (!res || typeof res !== 'object' || !res.locals) {
+    throw new Error('Must provide response object to hasAuthScope');
+  }
+
+  const {
+    authScopes
+  } = res.locals;
+  return Boolean(authScopes && authScopes[scope]);
+}
+function requireAuthScope(scope) {
+  return async (req, res, next) => {
+    const {
+      authRealm
+    } = res.locals;
+
+    if (!hasAuthScope(res, scope)) {
+      res.status(403).header('WWW-Authenticate', `Bearer realm="${authRealm}", scope="${scope}"`).end();
+      return;
+    }
+
+    next();
+  };
+}
+
+const isWebSocket = WebSocketWrapper.isInstance;
+WebSocketExpress.Router = Router;
+WebSocketExpress.isWebSocket = isWebSocket;
+WebSocketExpress.requireBearerAuth = requireBearerAuth;
+WebSocketExpress.requireAuthScope = requireAuthScope;
+WebSocketExpress.getAuthData = getAuthData;
+WebSocketExpress.hasAuthScope = hasAuthScope;
+
+exports.Router = Router;
+exports["default"] = WebSocketExpress;
+exports.getAuthData = getAuthData;
+exports.hasAuthScope = hasAuthScope;
+exports.isWebSocket = isWebSocket;
+exports.requireAuthScope = requireAuthScope;
+exports.requireBearerAuth = requireBearerAuth;
 //# sourceMappingURL=index.js.map

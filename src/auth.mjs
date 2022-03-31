@@ -1,4 +1,4 @@
-import WebSocketWrapper from './WebSocketWrapper';
+import WebSocketWrapper from './WebSocketWrapper.mjs';
 
 function splitFirst(data, delimiter) {
   const sep = data.indexOf(delimiter);

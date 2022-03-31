@@ -1,5 +1,6 @@
 import request from 'superwstest';
-import WebSocketExpress from '.';
+import WebSocketExpress from './index.mjs';
+import runServer from './runServer.mjs';
 
 function makeTestServer() {
   const app = new WebSocketExpress();
@@ -23,13 +24,9 @@ function makeTestServer() {
 describe('WebSocketExpress json', () => {
   let server;
 
-  beforeEach((done) => {
+  beforeEach(() => {
     server = makeTestServer();
-    server.listen(0, 'localhost', done);
-  });
-
-  afterEach((done) => {
-    server.close(done);
+    return runServer(server);
   });
 
   it('applies to HTTP requests', async () => {

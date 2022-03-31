@@ -1,8 +1,8 @@
 import http from 'http';
 import express from 'express';
 import WebSocket from 'ws';
-import WebSocketWrapper from './WebSocketWrapper';
-import wrapHandlers, { wrapNonWebsocket } from './wrapHandlers';
+import WebSocketWrapper from './WebSocketWrapper.mjs';
+import wrapHandlers, { wrapNonWebsocket } from './wrapHandlers.mjs';
 
 const FORWARDED_EXPRESS_METHODS = [
   'enable',
@@ -15,11 +15,7 @@ const FORWARDED_EXPRESS_METHODS = [
   'path',
 ];
 
-const FORWARDED_HTTP_MIDDLEWARE = [
-  'static',
-  'json',
-  'urlencoded',
-];
+const FORWARDED_HTTP_MIDDLEWARE = ['static', 'json', 'urlencoded'];
 
 function addPreCloseEvent(server) {
   if (server.close.hasPreCloseEvent) {
@@ -128,8 +124,7 @@ export default class WebSocketExpress {
 }
 
 FORWARDED_HTTP_MIDDLEWARE.forEach((middleware) => {
-  WebSocketExpress[middleware] = (...args) => wrapNonWebsocket(
-    express[middleware](...args),
-  );
+  WebSocketExpress[middleware] = (...args) =>
+    wrapNonWebsocket(express[middleware](...args));
   Object.assign(WebSocketExpress[middleware], express[middleware]);
 });
