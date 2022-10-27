@@ -99,7 +99,13 @@ app.useHTTP(middleware);
 // transaction
 app.set('shutdown timeout', 1000);
 
+// create and run a server:
 const server = app.createServer();
+server.listen(8080);
+
+// or attach to an existing server:
+const server = http.createServer();
+app.attach(server);
 server.listen(8080);
 ```
 
@@ -155,7 +161,8 @@ handler under the same URL as a non-websocket handler.
   calls `attach` (see below).
 
 - `App.attach` will attach the necessary event listeners to the given
-  server.
+  server (e.g. if you want to use a https server, or a long-lived
+  server with hot reloading).
 
 - `App.detach` will remove all attached event listeners from the given
   server.
