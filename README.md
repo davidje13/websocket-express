@@ -24,7 +24,7 @@ are not using TypeScript in your project)
 ## Usage
 
 ```javascript
-import WebSocketExpress, { Router } from 'websocket-express';
+import { WebSocketExpress, Router } from 'websocket-express';
 
 const app = new WebSocketExpress();
 const router = new Router();
@@ -117,7 +117,7 @@ The `static`, `json` and `urlencoded` middleware is bundled by default
 and ignores WebSocket requests, so `use` is fine:
 
 ```javascript
-import WebSocketExpress from 'websocket-express';
+import { WebSocketExpress } from 'websocket-express';
 
 const app = new WebSocketExpress();
 app.use(WebSocketExpress.static(myDirectory));
