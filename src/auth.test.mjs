@@ -172,7 +172,7 @@ describe('WebSocketExpress authentication middleware', () => {
           .expectText('holding')
           .expectClosed(1001, 'Session expired');
 
-        expect(server.closeCallCount).toEqual(1);
+        await expect.poll(() => server.closeCallCount, toEqual(1));
       });
 
       it('ignores token expiry if connection is already closed', async () => {
@@ -247,7 +247,7 @@ describe('WebSocketExpress authentication middleware', () => {
           .expectText('holding')
           .expectClosed(1001, 'Session expired');
 
-        expect(server.closeCallCount).toEqual(1);
+        await expect.poll(() => server.closeCallCount, toEqual(1));
       });
 
       it('allows expiry far into the future', async () => {

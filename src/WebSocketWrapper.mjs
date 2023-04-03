@@ -1,6 +1,7 @@
-import { STATUS_CODES } from 'http';
+import { STATUS_CODES } from 'node:http';
 
 const NONCE = {};
+const NOOP = () => null;
 
 // Copied from https://github.com/websockets/ws/blob/master/lib/websocket-server.js#L374
 function abortHandshake(socket, code, message, headers) {
@@ -100,7 +101,6 @@ export default class WebSocketWrapper {
     this.reject = this.reject;
     this.closeAtTime = this.closeAtTime;
     this.sendError = this.sendError;
-    this.setHeader = () => {}; // compatibility with expressjs (fake http.Response API)
     this.status = this.status;
     this.end = this.end;
     this.send = this.send;
@@ -108,6 +108,10 @@ export default class WebSocketWrapper {
     this.endTransaction = this.endTransaction;
     this.internalCheckCloseTimeout = this.internalCheckCloseTimeout;
     this.internalSoftClose = this.internalSoftClose;
+
+    // compatibility with expressjs (fake http.Response API)
+    this.setHeader = NOOP;
+    this.removeHeader = NOOP;
   }
 
   static isInstance(o) {

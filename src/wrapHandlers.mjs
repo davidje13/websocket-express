@@ -1,4 +1,4 @@
-import http from 'http';
+import http from 'node:http';
 import WebSocketWrapper from './WebSocketWrapper.mjs';
 
 function wrapWebsocket(fn) {

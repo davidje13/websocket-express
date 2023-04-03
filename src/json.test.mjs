@@ -1,5 +1,5 @@
 import request from 'superwstest';
-import WebSocketExpress from './index.mjs';
+import { WebSocketExpress } from './index.mjs';
 import runServer from './runServer.mjs';
 
 function makeTestServer() {

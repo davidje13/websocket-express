@@ -1,22 +1,32 @@
 const defaultRequire = require('websocket-express');
-const { isWebSocket, Router } = defaultRequire;
+const { WebSocketExpress, isWebSocket, Router } = defaultRequire;
 
-if (typeof defaultRequire !== 'function') {
-  throw new Error("require('websocket-express') did not return WebSocketExpress class");
+if (typeof WebSocketExpress !== 'function') {
+  throw new Error(
+    "require('websocket-express').WebSocketExpress did not return WebSocketExpress class",
+  );
 }
 
-if (typeof defaultRequire.default !== 'function') {
-  throw new Error("require('websocket-express').default did not return WebSocketExpress class");
-}
-
-if (typeof defaultRequire().listen !== 'function') {
-  throw new Error("require('websocket-express') did not return WebSocketExpress class");
+if (typeof new WebSocketExpress().listen !== 'function') {
+  throw new Error(
+    "require('websocket-express').WebSocketExpress did not return WebSocketExpress class",
+  );
 }
 
 if (typeof isWebSocket !== 'function') {
-  throw new Error("require('websocket-express').isWebSocket did not return function");
+  throw new Error(
+    "require('websocket-express').isWebSocket did not return function",
+  );
+}
+
+if (typeof WebSocketExpress.isWebSocket !== 'function') {
+  throw new Error(
+    "require('websocket-express').isWebSocket did not return function",
+  );
 }
 
 if (typeof Router !== 'function') {
-  throw new Error("require('websocket-express').Router did not return Router class");
+  throw new Error(
+    "require('websocket-express').Router did not return Router class",
+  );
 }

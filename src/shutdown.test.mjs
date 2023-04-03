@@ -1,7 +1,7 @@
-import http from 'http';
-import { promisify } from 'util';
+import http from 'node:http';
+import { promisify } from 'node:util';
 import request from 'superwstest';
-import WebSocketExpress, { Router } from './index.mjs';
+import { WebSocketExpress, Router } from './index.mjs';
 import runServer from './runServer.mjs';
 
 function makeTestApp() {

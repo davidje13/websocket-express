@@ -1,5 +1,5 @@
 import request from 'superwstest';
-import WebSocketExpress, { Router, isWebSocket } from './index.mjs';
+import { WebSocketExpress, Router, isWebSocket } from './index.mjs';
 import runServer from './runServer.mjs';
 
 function sleep(millis) {

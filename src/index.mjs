@@ -8,7 +8,7 @@ import {
   hasAuthScope,
 } from './auth.mjs';
 
-export const isWebSocket = WebSocketWrapper.isInstance;
+const isWebSocket = WebSocketWrapper.isInstance;
 
 WebSocketExpress.Router = Router;
 WebSocketExpress.isWebSocket = isWebSocket;
@@ -17,9 +17,10 @@ WebSocketExpress.requireAuthScope = requireAuthScope;
 WebSocketExpress.getAuthData = getAuthData;
 WebSocketExpress.hasAuthScope = hasAuthScope;
 
-export default WebSocketExpress;
 export {
+  WebSocketExpress,
   Router,
+  isWebSocket,
   requireBearerAuth,
   requireAuthScope,
   getAuthData,

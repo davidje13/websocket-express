@@ -1,7 +1,7 @@
-import path from 'path';
-import url from 'url';
+import path from 'node:path';
+import url from 'node:url';
 import request from 'superwstest';
-import WebSocketExpress from './index.mjs';
+import { WebSocketExpress } from './index.mjs';
 import runServer from './runServer.mjs';
 
 const rootDir = path.dirname(url.fileURLToPath(import.meta.url));
