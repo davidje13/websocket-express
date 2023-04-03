@@ -1,8 +1,6 @@
-'use strict';
-
-var http = require('node:http');
-var express = require('express');
-var WebSocket = require('ws');
+import http, { STATUS_CODES } from 'node:http';
+import express from 'express';
+import WebSocket from 'ws';
 
 const NONCE = {};
 const NOOP = () => null;
@@ -10,7 +8,7 @@ const NOOP = () => null;
 // Copied from https://github.com/websockets/ws/blob/master/lib/websocket-server.js#L374
 function abortHandshake(socket, code, message, headers) {
   if (socket.writable) {
-    const resolvedMessage = message || http.STATUS_CODES[code];
+    const resolvedMessage = message || STATUS_CODES[code];
     const resolvedHeaders = {
       Connection: 'close',
       'Content-type': 'text/html',
@@ -20,7 +18,7 @@ function abortHandshake(socket, code, message, headers) {
 
     socket.write(
       [
-        `HTTP/1.1 ${code} ${http.STATUS_CODES[code]}`,
+        `HTTP/1.1 ${code} ${STATUS_CODES[code]}`,
         ...Object.keys(resolvedHeaders).map(
           (h) => `${h}: ${resolvedHeaders[h]}`,
         ),
@@ -154,7 +152,7 @@ class WebSocketWrapper {
       throw new Error('Connection closed');
     }
 
-    const msg = message || http.STATUS_CODES[httpStatus];
+    const msg = message || STATUS_CODES[httpStatus];
 
     this.closed = true;
     if (this.ws) {
@@ -585,10 +583,4 @@ WebSocketExpress.requireAuthScope = requireAuthScope;
 WebSocketExpress.getAuthData = getAuthData;
 WebSocketExpress.hasAuthScope = hasAuthScope;
 
-exports.Router = Router;
-exports.WebSocketExpress = WebSocketExpress;
-exports.getAuthData = getAuthData;
-exports.hasAuthScope = hasAuthScope;
-exports.isWebSocket = isWebSocket;
-exports.requireAuthScope = requireAuthScope;
-exports.requireBearerAuth = requireBearerAuth;
+export { Router, WebSocketExpress, getAuthData, hasAuthScope, isWebSocket, requireAuthScope, requireBearerAuth };

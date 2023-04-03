@@ -1,7 +1,8 @@
-import http from 'http';
-import { promisify } from 'util';
+import http from 'node:http';
+import { promisify } from 'node:util';
 import request from 'superwstest';
-import WebSocketExpress, { Router } from '.';
+import { WebSocketExpress, Router } from './index.mjs';
+import runServer from './runServer.mjs';
 
 function makeTestApp() {
   const app = new WebSocketExpress();
@@ -32,14 +33,10 @@ function makeTestApp() {
 describe('server.close', () => {
   let server;
 
-  beforeEach((done) => {
+  beforeEach(() => {
     const app = makeTestApp();
     server = app.createServer();
-    server.listen(0, 'localhost', done);
-  });
-
-  afterEach((done) => {
-    server.close(done);
+    return runServer(server);
   });
 
   it('closes inactive websocket connections immediately', async () => {
@@ -73,15 +70,11 @@ describe('app.detach', () => {
   let app;
   let server;
 
-  beforeEach((done) => {
+  beforeEach(() => {
     app = makeTestApp();
     server = http.createServer();
     app.attach(server);
-    server.listen(0, 'localhost', done);
-  });
-
-  afterEach((done) => {
-    server.close(done);
+    return runServer(server);
   });
 
   it('closes inactive websocket connections immediately', async () => {
@@ -107,13 +100,9 @@ describe('app.detach', () => {
   describe('multiple servers', () => {
     let server2;
 
-    beforeEach((done) => {
+    beforeEach(() => {
       server2 = app.createServer();
-      server2.listen(0, 'localhost', done);
-    });
-
-    afterEach((done) => {
-      server2.close(done);
+      return runServer(server2);
     });
 
     it('does not close connections to other servers', async () => {
@@ -130,15 +119,11 @@ describe('app.detach', () => {
 describe('server.close with "shutdown timeout" set', () => {
   let server;
 
-  beforeEach((done) => {
+  beforeEach(() => {
     const app = makeTestApp();
     app.set('shutdown timeout', 500);
     server = app.createServer();
-    server.listen(0, 'localhost', done);
-  });
-
-  afterEach((done) => {
-    server.close(done);
+    return runServer(server);
   });
 
   it('force-closes transactions after timeout expires', async () => {

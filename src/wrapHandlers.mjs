@@ -1,5 +1,5 @@
-import http from 'http';
-import WebSocketWrapper from './WebSocketWrapper';
+import http from 'node:http';
+import WebSocketWrapper from './WebSocketWrapper.mjs';
 
 function wrapWebsocket(fn) {
   if (typeof fn !== 'function') {

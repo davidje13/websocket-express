@@ -1,5 +1,6 @@
 import request from 'superwstest';
-import WebSocketExpress, { Router, isWebSocket } from '.';
+import { WebSocketExpress, Router, isWebSocket } from './index.mjs';
+import runServer from './runServer.mjs';
 
 function sleep(millis) {
   return new Promise((resolve) => setTimeout(resolve, millis));
@@ -69,28 +70,20 @@ function makeTestServer() {
 describe('WebSocketExpress routing', () => {
   let server;
 
-  beforeEach((done) => {
+  beforeEach(() => {
     server = makeTestServer();
-    server.listen(0, 'localhost', done);
-  });
-
-  afterEach((done) => {
-    server.close(done);
+    return runServer(server);
   });
 
   describe('get', () => {
     it('returns response from handler', async () => {
-      const response = await request(server)
-        .get('/path/get')
-        .expect(200);
+      const response = await request(server).get('/path/get').expect(200);
 
       expect(response.text).toEqual('get-output');
     });
 
     it('does not respond to websocket connections', async () => {
-      await request(server)
-        .ws('/path/get')
-        .expectConnectionError(404);
+      await request(server).ws('/path/get').expectConnectionError(404);
     });
   });
 
@@ -108,15 +101,11 @@ describe('WebSocketExpress routing', () => {
     });
 
     it('does not respond to HTTP requests', async () => {
-      await request(server)
-        .get('/path/ws')
-        .expect(404);
+      await request(server).get('/path/ws').expect(404);
     });
 
     it('does not respond to rejected connections', async () => {
-      await request(server)
-        .ws('/path/reject-ws')
-        .expectConnectionError(404);
+      await request(server).ws('/path/reject-ws').expectConnectionError(404);
     });
 
     it('rejects connection if handler rejects', async () => {
@@ -126,9 +115,7 @@ describe('WebSocketExpress routing', () => {
     });
 
     it('returns a HTTP not found status for unknown URLs', async () => {
-      await request(server)
-        .ws('/path/nope')
-        .expectConnectionError(404);
+      await request(server).ws('/path/nope').expectConnectionError(404);
     });
 
     it('responds to asynchronously accepted connections', async () => {
@@ -154,9 +141,7 @@ describe('WebSocketExpress routing', () => {
 
   describe('multiple routes on same URL', () => {
     it('uses dedicated handlers for HTTP connections', async () => {
-      const response = await request(server)
-        .get('/path/multi')
-        .expect(200);
+      const response = await request(server).get('/path/multi').expect(200);
 
       expect(response.text).toEqual('http');
     });

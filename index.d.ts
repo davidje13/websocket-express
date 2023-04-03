@@ -1,7 +1,10 @@
 declare module 'websocket-express' {
   import { Server } from 'http';
   import * as WebSocket from 'ws';
-  import express, {
+  import {
+    static,
+    json,
+    urlencoded,
     Request,
     Response,
     IRouterHandler,
@@ -30,7 +33,11 @@ declare module 'websocket-express' {
   export interface WSResponse extends Response {
     accept(): Promise<WebSocket & WebSocketExtension>;
     reject(code?: number, message?: string | null): void;
-    sendError(httpStatus: number, wsStatus?: number | null, message?: string | null): void;
+    sendError(
+      httpStatus: number,
+      wsStatus?: number | null,
+      message?: string | null,
+    ): void;
     closeAtTime(time: number, code?: number, message?: string): void;
     send(message: string): this;
     beginTransaction(): void;
@@ -55,7 +62,7 @@ declare module 'websocket-express' {
     authRealm: string,
     req: Request<P>,
     res: Response,
-  ) => (Promise<JWTPayload | null> | JWTPayload | null);
+  ) => Promise<JWTPayload | null> | JWTPayload | null;
 
   export function requireBearerAuth<P extends Params = ParamsDictionary>(
     realm: ((req: Request<P>, res: Response) => string) | string,
@@ -79,55 +86,60 @@ declare module 'websocket-express' {
   ) => any;
 
   export type WSRequestHandlerParams<P extends Params = ParamsDictionary> =
-    WSRequestHandler<P> |
-    WSErrorRequestHandler<P> |
-    (WSRequestHandler<P> | WSErrorRequestHandler<P>)[];
+    | WSRequestHandler<P>
+    | WSErrorRequestHandler<P>
+    | (WSRequestHandler<P> | WSErrorRequestHandler<P>)[];
 
   export type PathParams = string | RegExp | (string | RegExp)[];
 
   export interface WSRouterMatcher<T> {
-    <P extends Params = ParamsDictionary>(path: PathParams, ...handlers: WSRequestHandler<P>[]): T;
-    <P extends Params = ParamsDictionary>(path: PathParams, ...handlers: WSRequestHandlerParams<P>[]): T;
+    <P extends Params = ParamsDictionary>(
+      path: PathParams,
+      ...handlers: WSRequestHandler<P>[]
+    ): T;
+    <P extends Params = ParamsDictionary>(
+      path: PathParams,
+      ...handlers: WSRequestHandlerParams<P>[]
+    ): T;
   }
 
-  interface Router extends IRouter {
-    ws: WSRouterMatcher<this>;
-    useHTTP: IRouterHandler<this> & IRouterMatcher<this>;
-  }
+  interface Router extends IRouter {}
 
   class Router {
     public constructor(options?: RouterOptions);
+
+    public readonly ws: WSRouterMatcher<this>;
+    public readonly useHTTP: IRouterHandler<this> & IRouterMatcher<this>;
   }
 
-  interface WebSocketExpress extends Express {
-    ws: WSRouterMatcher<this>;
-    useHTTP: IRouterHandler<this> & IRouterMatcher<this>;
-
-    attach(server: Server): void;
-    detach(server: Server): void;
-    createServer(): Server;
-  }
+  interface WebSocketExpress extends Express {}
 
   class WebSocketExpress {
-    public static static: typeof express.static;
+    public readonly ws: WSRouterMatcher<this>;
+    public readonly useHTTP: IRouterHandler<this> & IRouterMatcher<this>;
 
-    public static json: typeof express.json;
+    public attach(server: Server): void;
+    public detach(server: Server): void;
+    public createServer(): Server;
 
-    public static urlencoded: typeof express.urlencoded;
+    public static readonly static: typeof static;
 
-    public static isWebSocket: typeof isWebSocket;
+    public static readonly json: typeof json;
 
-    public static Router: typeof Router;
+    public static readonly urlencoded: typeof urlencoded;
 
-    public static requireBearerAuth: typeof requireBearerAuth;
+    public static readonly isWebSocket: typeof isWebSocket;
 
-    public static requireAuthScope: typeof requireAuthScope;
+    public static readonly Router: typeof Router;
 
-    public static getAuthData: typeof getAuthData;
+    public static readonly requireBearerAuth: typeof requireBearerAuth;
 
-    public static hasAuthScope: typeof hasAuthScope;
+    public static readonly requireAuthScope: typeof requireAuthScope;
+
+    public static readonly getAuthData: typeof getAuthData;
+
+    public static readonly hasAuthScope: typeof hasAuthScope;
   }
 
-  export { Router, WebSocket };
-  export default WebSocketExpress;
+  export { Router, WebSocketExpress };
 }
