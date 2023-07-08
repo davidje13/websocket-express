@@ -1,4 +1,5 @@
 import request from 'superwstest';
+import WebSocket from 'ws';
 import { WebSocketExpress, Router, isWebSocket } from './index.mjs';
 import runServer from './runServer.mjs';
 
@@ -20,6 +21,10 @@ function makeTestServer() {
       ws.send(`echo ${msg}`);
     });
     ws.send('hello');
+  });
+
+  router.ws('/path/abandon', (req, res) => {
+    res.abandon();
   });
 
   router.get('/path/multi', (req, res) => {
@@ -68,27 +73,26 @@ function makeTestServer() {
 }
 
 describe('WebSocketExpress routing', () => {
-  let server;
-
-  beforeEach(() => {
-    server = makeTestServer();
+  const S = beforeEach(({ setParameter }) => {
+    const server = makeTestServer();
+    setParameter(server);
     return runServer(server);
   });
 
   describe('get', () => {
-    it('returns response from handler', async () => {
+    it('returns response from handler', async ({ [S]: server }) => {
       const response = await request(server).get('/path/get').expect(200);
 
       expect(response.text).toEqual('get-output');
     });
 
-    it('does not respond to websocket connections', async () => {
+    it('does not respond to websocket connections', async ({ [S]: server }) => {
       await request(server).ws('/path/get').expectConnectionError(404);
     });
   });
 
   describe('ws', () => {
-    it('responds to websocket connections', async () => {
+    it('responds to websocket connections', async ({ [S]: server }) => {
       await request(server)
         .ws('/path/ws')
         .expectText('hello')
@@ -100,25 +104,27 @@ describe('WebSocketExpress routing', () => {
         .expectClosed();
     });
 
-    it('does not respond to HTTP requests', async () => {
+    it('does not respond to HTTP requests', async ({ [S]: server }) => {
       await request(server).get('/path/ws').expect(404);
     });
 
-    it('does not respond to rejected connections', async () => {
+    it('does not respond to rejected connections', async ({ [S]: server }) => {
       await request(server).ws('/path/reject-ws').expectConnectionError(404);
     });
 
-    it('rejects connection if handler rejects', async () => {
+    it('rejects connection if handler rejects', async ({ [S]: server }) => {
       await request(server)
         .ws('/path/explicit-reject-ws')
         .expectConnectionError(500);
     });
 
-    it('returns a HTTP not found status for unknown URLs', async () => {
+    it('returns HTTP 404 for unknown URLs', async ({ [S]: server }) => {
       await request(server).ws('/path/nope').expectConnectionError(404);
     });
 
-    it('responds to asynchronously accepted connections', async () => {
+    it('responds to asynchronously accepted connections', async ({
+      [S]: server,
+    }) => {
       await request(server)
         .ws('/path/ws-async')
         .expectText('hello')
@@ -126,13 +132,17 @@ describe('WebSocketExpress routing', () => {
         .expectClosed();
     });
 
-    it('does not respond to asynchronously rejected connections', async () => {
+    it('does not respond to asynchronously rejected connections', async ({
+      [S]: server,
+    }) => {
       await request(server)
         .ws('/path/reject-ws-async')
         .expectConnectionError(404);
     });
 
-    it('rejects connection asynchronously if handler rejects', async () => {
+    it('rejects connection asynchronously if handler rejects', async ({
+      [S]: server,
+    }) => {
       await request(server)
         .ws('/path/explicit-reject-ws-async')
         .expectConnectionError(500);
@@ -140,13 +150,17 @@ describe('WebSocketExpress routing', () => {
   });
 
   describe('multiple routes on same URL', () => {
-    it('uses dedicated handlers for HTTP connections', async () => {
+    it('uses dedicated handlers for HTTP connections', async ({
+      [S]: server,
+    }) => {
       const response = await request(server).get('/path/multi').expect(200);
 
       expect(response.text).toEqual('http');
     });
 
-    it('uses dedicated handlers for websocket connections', async () => {
+    it('uses dedicated handlers for websocket connections', async ({
+      [S]: server,
+    }) => {
       await request(server)
         .ws('/path/multi')
         .expectText('ws')
@@ -154,7 +168,7 @@ describe('WebSocketExpress routing', () => {
         .expectClosed();
     });
 
-    it('uses shared handlers for HTTP connections', async () => {
+    it('uses shared handlers for HTTP connections', async ({ [S]: server }) => {
       const response = await request(server)
         .get('/path/all-in-one')
         .expect(200);
@@ -162,10 +176,60 @@ describe('WebSocketExpress routing', () => {
       expect(response.text).toEqual('http');
     });
 
-    it('uses shared handlers for websocket connections', async () => {
+    it('uses shared handlers for websocket connections', async ({
+      [S]: server,
+    }) => {
       await request(server)
         .ws('/path/all-in-one')
         .expectText('ws')
+        .close()
+        .expectClosed();
+    });
+  });
+
+  describe('abandon', () => {
+    it('restores the request URL', async ({ [S]: server }) => {
+      let capturedUrl;
+      server.on('upgrade', (req, socket) => {
+        capturedUrl = req.url;
+        socket.destroy();
+      });
+      await request(server).ws('/path/abandon').expectConnectionError();
+      expect(capturedUrl).toEqual('/path/abandon');
+    });
+
+    it('does not interfere with the connection', async ({ [S]: server }) => {
+      const wsServer = new WebSocket.Server({ noServer: true });
+      server.on('upgrade', (req, socket, head) => {
+        wsServer.handleUpgrade(req, socket, head, (ws) => {
+          ws.send('hello');
+          ws.close();
+        });
+      });
+
+      await request(server)
+        .ws('/path/abandon')
+        .expectText('hello')
+        .expectClosed();
+    });
+
+    it('does not close the connection on server close', async ({
+      [S]: server,
+    }) => {
+      const wsServer = new WebSocket.Server({ noServer: true });
+      server.on('upgrade', (req, socket, head) => {
+        wsServer.handleUpgrade(req, socket, head, async (ws) => {
+          ws.send('hello');
+          await sleep(100);
+          ws.send('delayed');
+        });
+      });
+
+      await request(server, { shutdownDelay: 1000 })
+        .ws('/path/abandon')
+        .expectText('hello')
+        .exec(() => new Promise((resolve) => server.close(resolve)))
+        .expectText('delayed')
         .close()
         .expectClosed();
     });

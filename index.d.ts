@@ -33,6 +33,7 @@ declare module 'websocket-express' {
   export interface WSResponse extends Response {
     accept(): Promise<WebSocket & WebSocketExtension>;
     reject(code?: number, message?: string | null): void;
+    abandon(): void;
     sendError(
       httpStatus: number,
       wsStatus?: number | null,

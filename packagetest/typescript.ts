@@ -63,6 +63,7 @@ class MyRouter2 extends Router {
 const app = new WebSocketExpress();
 app.use('/foo', new MyRouter1());
 app.use('/bar', new MyRouter2());
+app.ws('/nope', (req, res) => res.abandon());
 const server = app.listen(0);
 server.close();
 

@@ -123,10 +123,35 @@ const app = new WebSocketExpress();
 app.use(WebSocketExpress.static(myDirectory));
 ```
 
+Example integration with an external websocket server library (socket.io):
+
+```javascript
+import { Server } from 'socket.io';
+import { WebSocketExpress } from 'websocket-express';
+
+const app = new WebSocketExpress();
+app.ws('/socket.io/*', (req, res) => res.abandon()); // /socket.io requests are handled by socketioServer
+// register other websocket and non-websocket endpoints as normal
+
+const server = app.createServer();
+const socketioServer = new Server(server);
+// configure socketioServer as normal
+
+server.listen(8080);
+```
+
+Note that if you `abandon` a request which is _not_ handled by another
+library, the connection will hang until the client eventually times out.
+This may be particularly problematic when shutting down the server:
+`websocket-express` will normally close all remaining websocket
+connections automatically when `server.close` is called, but it will
+not close abandoned connections. This may delay the process termination,
+as NodeJS will remain active as long as any connections are open.
+
 ## API
 
 The main method is `Router.ws`. This accepts a (possibly asynchronous)
-function with 3 parameters; the request, the response, and a `next`
+function with 3 parameters: the request, the response, and a `next`
 callback to be invoked if the request is rejected for any reason.
 
 If the request is accepted, the function should call `accept` to get a
@@ -138,7 +163,9 @@ error description), and the next possible handler, or the error
 handler, will be called (according to the standard express logic).
 
 If no handlers are able to accept a WebSocket request, it will be
-closed (with code 4404 by default).
+closed (with code 4404 by default). If you want another library to
+handle the request (e.g. socket.io), you can call `abandon` to stop
+any further handling of the request.
 
 If an exception is thrown, the socket will be closed with code 1011.
 
@@ -171,7 +198,53 @@ handler under the same URL as a non-websocket handler.
   milliseconds) used by `close()`, after which connections will be
   forced to close even if they are in a transaction.
 
-The returned WebSocket has some additional helper methods:
+The `response` parameter passed to websocket handlers has additional
+methods:
+
+- `res.accept()` accepts the protocol switch, establishing the
+  websocket connection. This returns a promise which resolves to the
+  newly established websocket.
+
+- `res.reject([httpStatus[, message]])` returns a HTTP error instead
+  of accepting the websocket connection. Defaults to HTTP 500.
+
+- `res.abandon()` stops all further processing of the connection. This
+  should be used if you want to delegate to another library which has
+  also registered an `upgrade` listener on the server. Note that this
+  is provided as an escape hatch; in general you should try to
+  `accept` the connection and pass the websocket to other libraries,
+  as this will handle lifecycle events (such as closing the server)
+  more gracefully.
+
+- `res.sendError(httpStatus[, websocketErrorCode[, message]])` sends
+  a HTTP or websocket error and closes the connection. If no explicit
+  websocket error code is provided and the websocket connection has
+  already been established, this will default to `4000 + httpStatus`
+  (e.g. HTTP 404 becomes websocket error 4404).
+
+- `res.send(message)` shorthand for accepting the connection, sending
+  a message, then closing the connection. Provided for compatibility
+  with the `express` API.
+
+- `res.beginTransaction()` / `res.endTransaction()` mark (nestable)
+  transactions on the websocket connection. While a transaction is
+  active, `websocket-express` will avoid closing the connection
+  (e.g. during server shutdown). These should be used to wrap
+  short-lived sequences of messages which need to be sent together.
+  Do not use these for long-lived operations, as it will delay
+  server shutdown. To ensure `endTransaction` is called, it is
+  recommended that you use the pattern:
+
+  ```javascript
+  try {
+    res.beginTransaction();
+    // transaction code
+  } finally {
+    res.endTransaction();
+  }
+  ```
+
+The WebSocket returned by `accept` has some additional helper methods:
 
 - `ws.nextMessage` will return a promise which resolves with the next
   message received by the websocket. If the socket closes before a

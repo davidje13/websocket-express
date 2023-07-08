@@ -101,6 +101,7 @@ class WebSocketWrapper {
     // must be explicitly added to the instance, not just the class
     this.accept = this.accept;
     this.reject = this.reject;
+    this.abandon = this.abandon;
     this.closeAtTime = this.closeAtTime;
     this.sendError = this.sendError;
     this.status = this.status;
@@ -145,6 +146,17 @@ class WebSocketWrapper {
       throw new Error('Already accepted WebSocket connection');
     }
     this.sendError(code, null, message);
+  }
+
+  abandon() {
+    if (this.ws) {
+      throw new Error('Already accepted WebSocket connection');
+    }
+    // expressjs mutates the url property of the request - reset it for other libraries to consume
+    if (this.req.originalUrl) {
+      this.req.url = this.req.originalUrl;
+    }
+    this.closed = true;
   }
 
   sendError(httpStatus, wsStatus = null, message = null) {
