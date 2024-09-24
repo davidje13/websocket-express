@@ -64,35 +64,42 @@ export function requireBearerAuth(realm, extractAndValidateToken) {
   }
 
   return async (req, res, next) => {
-    const now = Math.floor(Date.now() / 1000);
-    const authRealm = await realmForRequest(req, res);
-    const token = await getProvidedToken(req, res);
+    try {
+      const now = Math.floor(Date.now() / 1000);
+      const authRealm = await realmForRequest(req, res);
+      const token = await getProvidedToken(req, res);
 
-    let tokenData = null;
-    if (token) {
-      tokenData = await extractAndValidateToken(token, authRealm, req, res);
-    }
+      let tokenData = null;
+      if (token) {
+        tokenData = await extractAndValidateToken(token, authRealm, req, res);
+      }
 
-    if (
-      !tokenData ||
-      (typeof tokenData.nbf === 'number' && now < tokenData.nbf) ||
-      (typeof tokenData.exp === 'number' && now >= tokenData.exp)
-    ) {
-      res
-        .status(401)
-        .header('WWW-Authenticate', `Bearer realm="${authRealm}"`)
-        .end();
+      if (
+        !tokenData ||
+        (typeof tokenData.nbf === 'number' && now < tokenData.nbf) ||
+        (typeof tokenData.exp === 'number' && now >= tokenData.exp)
+      ) {
+        res
+          .status(401)
+          .header('WWW-Authenticate', `Bearer realm="${authRealm}"`)
+          .end();
+        return;
+      }
+
+      if (
+        typeof tokenData.exp === 'number' &&
+        WebSocketWrapper.isInstance(res)
+      ) {
+        res.closeAtTime(tokenData.exp * 1000, 1001, 'Session expired');
+      }
+
+      res.locals.authRealm = authRealm;
+      res.locals.authData = tokenData;
+      res.locals.authScopes = extractScopesMap(tokenData);
+    } catch (e) {
+      console.warn('Error in requireBearerAuth:', e);
       return;
     }
-
-    if (typeof tokenData.exp === 'number' && WebSocketWrapper.isInstance(res)) {
-      res.closeAtTime(tokenData.exp * 1000, 1001, 'Session expired');
-    }
-
-    res.locals.authRealm = authRealm;
-    res.locals.authData = tokenData;
-    res.locals.authScopes = extractScopesMap(tokenData);
-
     next();
   };
 }
@@ -114,15 +121,20 @@ export function hasAuthScope(res, scope) {
 
 export function requireAuthScope(scope) {
   return async (req, res, next) => {
-    const { authRealm } = res.locals;
-    if (!hasAuthScope(res, scope)) {
-      res
-        .status(403)
-        .header(
-          'WWW-Authenticate',
-          `Bearer realm="${authRealm}", scope="${scope}"`,
-        )
-        .end();
+    try {
+      const { authRealm } = res.locals;
+      if (!hasAuthScope(res, scope)) {
+        res
+          .status(403)
+          .header(
+            'WWW-Authenticate',
+            `Bearer realm="${authRealm}", scope="${scope}"`,
+          )
+          .end();
+        return;
+      }
+    } catch (e) {
+      console.warn('Error in requireAuthScope:', e);
       return;
     }
     next();

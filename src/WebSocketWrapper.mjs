@@ -63,13 +63,16 @@ function nextMessage(ws, { timeout = 0 } = {}) {
 
     onClose = () => {
       detach();
-      reject();
+      reject(new Error('Connection closed'));
     };
 
     ws.on('message', onMessage);
     ws.on('close', onClose);
     if (timeout > 0) {
-      exp = setTimeout(onClose, timeout);
+      exp = setTimeout(() => {
+        detach();
+        reject(new Error('Timed out waiting for message'));
+      }, timeout);
     }
   });
 }

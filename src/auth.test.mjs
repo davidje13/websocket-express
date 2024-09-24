@@ -283,6 +283,10 @@ describe('WebSocketExpress authentication middleware', () => {
           .send('valid-{"scopes":{"my-scope":true}}')
           .expectText('content');
       });
+
+      it('survives if the connection is closed before details are sent', async () => {
+        await request(server).ws('/simple').close().expectClosed();
+      });
     });
   });
 

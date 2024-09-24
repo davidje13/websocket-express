@@ -6,6 +6,6 @@
   },
   "devDependencies": {
     "websocket-express": "file:websocket-express.tgz",
-    "typescript": "5.0.x"
+    "typescript": "5.6.x"
   }
 }

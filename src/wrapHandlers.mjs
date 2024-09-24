@@ -7,7 +7,13 @@ function wrapWebsocket(fn) {
   }
   return (req, res, next) => {
     if (WebSocketWrapper.isInstance(res)) {
-      fn(req, res, next);
+      (async () => {
+        try {
+          await fn(req, res, next);
+        } catch (e) {
+          console.error('Uncaught error in websocket handler', e);
+        }
+      })();
     } else {
       next('route');
     }
