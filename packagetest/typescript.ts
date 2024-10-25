@@ -25,7 +25,10 @@ class MyRouter1 extends WebSocketExpress.Router {
         isWebSocket(res);
 
         const ws = await res.accept();
-        ws.send('hello');
+        const message = await ws.nextMessage();
+        if (message.isBinary) {
+          ws.send('hello');
+        }
         res.send('hi');
 
         // @ts-expect-error

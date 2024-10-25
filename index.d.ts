@@ -26,12 +26,12 @@ declare module 'websocket-express' {
     isBinary: boolean;
   }
 
-  interface WebSocketExtension {
+  export type ExtendedWebSocket = WebSocket & {
     nextMessage(options?: NextMessageOptions): Promise<WebSocketMessage>;
-  }
+  };
 
   export interface WSResponse extends Response {
-    accept(): Promise<WebSocket & WebSocketExtension>;
+    accept(): Promise<ExtendedWebSocket>;
     reject(code?: number, message?: string | null): void;
     abandon(): void;
     sendError(
@@ -58,7 +58,7 @@ declare module 'websocket-express' {
     scopes?: string[] | { [scope: string]: boolean } | string;
   }
 
-  type TokenExtractor<P extends Params = ParamsDictionary> = (
+  export type TokenExtractor<P extends Params = ParamsDictionary> = (
     token: string,
     authRealm: string,
     req: Request<P>,
