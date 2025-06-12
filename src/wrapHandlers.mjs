@@ -28,7 +28,7 @@ export function wrapNonWebsocket(fn) {
     if (WebSocketWrapper.isInstance(res)) {
       next('route');
     } else {
-      (async () => fn(req, res, next))().catch(next);
+      return fn(req, res, next);
     }
   };
 }
