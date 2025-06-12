@@ -30,7 +30,8 @@ describe('WebSocketExpress static', () => {
     await request(server).ws('/foo.txt').expectConnectionError(404);
   });
 
-  it('includes mime types', async () => {
+  it.ignore('includes mime types', async () => {
+    // Removed in Express 5.x
     const htmlType = WebSocketExpress.static.mime.lookup('a.html');
 
     expect(htmlType).toEqual('text/html');

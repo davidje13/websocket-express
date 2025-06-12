@@ -37,10 +37,10 @@
     "ws": "7.x || 8.x"
   },
   "devDependencies": {
-    "@types/express": "4.x",
-    "express": "4.x",
+    "@types/express": "5.x",
+    "express": "5.x",
     "lean-test": "2.x",
-    "prettier": "3.3.3",
+    "prettier": "3.5.3",
     "rollup": "4.x",
     "supertest": "7.x",
     "superwstest": "2.x",

@@ -298,7 +298,7 @@ function wrapNonWebsocket(fn) {
     if (WebSocketWrapper.isInstance(res)) {
       next('route');
     } else {
-      fn(req, res, next);
+      return fn(req, res, next);
     }
   };
 }
