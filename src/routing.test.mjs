@@ -15,6 +15,26 @@ function makeTestServer() {
     res.end('get-output');
   });
 
+  router.get(
+    '/path/get/fail',
+    (req, res) => {
+      throw new Error('nope');
+    },
+    (err, req, res, next) => {
+      res.end('caught ' + err.message);
+    },
+  );
+
+  const errorHandlingRouter = new Router();
+  errorHandlingRouter.get('/', async (req, res) => {
+    throw new Error('async nope');
+  });
+  errorHandlingRouter.use((err, req, res, next) => {
+    res.end('caught ' + err.message);
+  });
+
+  router.use('/path/get/async-fail', errorHandlingRouter);
+
   router.ws('/path/ws', async (req, res) => {
     const ws = await res.accept();
     ws.on('message', (msg) => {
@@ -88,6 +108,20 @@ describe('WebSocketExpress routing', () => {
 
     it('does not respond to websocket connections', async ({ [S]: server }) => {
       await request(server).ws('/path/get').expectConnectionError(404);
+    });
+
+    it('supports passing error handlers', async ({ [S]: server }) => {
+      const response = await request(server).get('/path/get/fail').expect(200);
+
+      expect(response.text).toEqual('caught nope');
+    });
+
+    it('handles asynchronous errors', async ({ [S]: server }) => {
+      const response = await request(server)
+        .get('/path/get/async-fail')
+        .expect(200);
+
+      expect(response.text).toEqual('caught async nope');
     });
   });
 

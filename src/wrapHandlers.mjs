@@ -24,6 +24,16 @@ export function wrapNonWebsocket(fn) {
   if (typeof fn !== 'function') {
     return fn;
   }
+  if (fn.length === 4) {
+    // function is an error handler - must preserve signature for auto-detection inside express
+    return (err, req, res, next) => {
+      if (WebSocketWrapper.isInstance(res)) {
+        next('route');
+      } else {
+        return fn(err, req, res, next);
+      }
+    };
+  }
   return (req, res, next) => {
     if (WebSocketWrapper.isInstance(res)) {
       next('route');
