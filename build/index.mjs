@@ -331,7 +331,7 @@ function wrapHandlers(o, src = null) {
     target.all = src.all.bind(src);
   }
 
-  target.ws = target.use;
+  target.ws = target.all;
   wrapHandler(target, 'ws', wrapWebsocket);
 
   target.useHTTP = target.use;

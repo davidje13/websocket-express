@@ -43,6 +43,16 @@ function makeTestServer() {
     ws.send('hello');
   });
 
+  router.ws('/path/ws/sub', async (req, res) => {
+    const ws = await res.accept();
+    ws.send('sub');
+  });
+
+  router.ws('/path/param/:myParameter', async (req, res) => {
+    const ws = await res.accept();
+    ws.send(req.params.myParameter);
+  });
+
   router.ws('/path/abandon', (req, res) => {
     res.abandon();
   });
@@ -154,6 +164,18 @@ describe('WebSocketExpress routing', () => {
 
     it('returns HTTP 404 for unknown URLs', async ({ [S]: server }) => {
       await request(server).ws('/path/nope').expectConnectionError(404);
+    });
+
+    it('prefers more specific paths', async ({ [S]: server }) => {
+      await request(server).ws('/path/ws/sub').expectText('sub');
+    });
+
+    it('returns HTTP 404 for unknown sub-URLs', async ({ [S]: server }) => {
+      await request(server).ws('/path/ws/nope').expectConnectionError(404);
+    });
+
+    it('provides path parameters as usual', async ({ [S]: server }) => {
+      await request(server).ws('/path/param/foo').expectText('foo');
     });
 
     it('responds to asynchronously accepted connections', async ({
