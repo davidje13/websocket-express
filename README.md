@@ -1,14 +1,14 @@
 # WebSocket Express
 
-Extends [express](https://expressjs.com/) with WebSocket capabilities
-from [ws](https://github.com/websockets/ws). This allows an easy syntax
-for handling WebSockets as well as allowing a single server to handle
-both HTTP and WebSocket requests.
+Extends [express](https://expressjs.com/) with WebSocket capabilities from
+[ws](https://github.com/websockets/ws). This allows an easy syntax for handling
+WebSockets as well as allowing a single server to handle both HTTP and WebSocket
+requests.
 
 This project is similar to (and takes some inspiration from
-[express-ws](https://github.com/HenningM/express-ws), but chooses to
-provide a separate API rather than monkeypatching the express objects,
-and supports asynchronous operations in all locations.
+[express-ws](https://github.com/HenningM/express-ws), but chooses to provide a
+separate API rather than monkeypatching the express objects, and supports
+asynchronous operations in all locations.
 
 ## Install dependency
 
@@ -16,10 +16,9 @@ and supports asynchronous operations in all locations.
 npm install --save websocket-express ws express @types/ws @types/express
 ```
 
-(`ws` and `express` are required as peer dependencies of
-`websocket-express`. You can use `express` version 4 or 5.
-`@types/ws` and `@types/express` must be added even if you
-are not using TypeScript in your project)
+(`ws` and `express` are required as peer dependencies of `websocket-express`.
+You can use `express` version 4 or 5. `@types/ws` and `@types/express` must be
+added even if you are not using TypeScript in your project)
 
 ## Usage
 
@@ -109,12 +108,12 @@ app.attach(server);
 server.listen(8080);
 ```
 
-If you have a vanilla express `Router` or middleware (e.g. from an
-external library), it is recommended to use `useHTTP` rather than `use`
-to attach it, to ensure it is not confused by WebSocket requests.
+If you have a vanilla express `Router` or middleware (e.g. from an external
+library), it is recommended to use `useHTTP` rather than `use` to attach it, to
+ensure it is not confused by WebSocket requests.
 
-The `static`, `json` and `urlencoded` middleware is bundled by default
-and ignores WebSocket requests, so `use` is fine:
+The `static`, `json` and `urlencoded` middleware is bundled by default and
+ignores WebSocket requests, so `use` is fine:
 
 ```javascript
 import { WebSocketExpress } from 'websocket-express';
@@ -140,99 +139,92 @@ const socketioServer = new Server(server);
 server.listen(8080);
 ```
 
-Note that if you `abandon` a request which is _not_ handled by another
-library, the connection will hang until the client eventually times out.
-This may be particularly problematic when shutting down the server:
-`websocket-express` will normally close all remaining websocket
-connections automatically when `server.close` is called, but it will
-not close abandoned connections. This may delay the process termination,
-as NodeJS will remain active as long as any connections are open.
+Note that if you `abandon` a request which is _not_ handled by another library,
+the connection will hang until the client eventually times out. This may be
+particularly problematic when shutting down the server: `websocket-express` will
+normally close all remaining websocket connections automatically when
+`server.close` is called, but it will not close abandoned connections. This may
+delay the process termination, as NodeJS will remain active as long as any
+connections are open.
 
 ## API
 
-The main method is `Router.ws`. This accepts a (possibly asynchronous)
-function with 3 parameters: the request, the response, and a `next`
-callback to be invoked if the request is rejected for any reason.
+The main method is `Router.ws`. This accepts a (possibly asynchronous) function
+with 3 parameters: the request, the response, and a `next` callback to be
+invoked if the request is rejected for any reason.
 
 If the request is accepted, the function should call `accept` to get a
-WebSocket, attach `message` and `close` event listeners and can
-continue to handle the WebSocket as normal.
+WebSocket, attach `message` and `close` event listeners and can continue to
+handle the WebSocket as normal.
 
-If the request is rejected, `next` should be called (possibly with an
-error description), and the next possible handler, or the error
-handler, will be called (according to the standard express logic).
+If the request is rejected, `next` should be called (possibly with an error
+description), and the next possible handler, or the error handler, will be
+called (according to the standard express logic).
 
-If no handlers are able to accept a WebSocket request, it will be
-closed (with code 4404 by default). If you want another library to
-handle the request (e.g. socket.io), you can call `abandon` to stop
-any further handling of the request.
+If no handlers are able to accept a WebSocket request, it will be closed (with
+code 4404 by default). If you want another library to handle the request (e.g.
+socket.io), you can call `abandon` to stop any further handling of the request.
 
 If an exception is thrown, the socket will be closed with code 1011.
 
-As with `get` / `post` / etc. it is possible to register a WebSocket
-handler under the same URL as a non-websocket handler.
+As with `get` / `post` / etc. it is possible to register a WebSocket handler
+under the same URL as a non-websocket handler.
 
-- `Router.useHTTP` / `App.useHTTP` behaves like `Router.use` in
-  express. It will invoke the middleware or router for all
-  non-WebSocket requests.
+- `Router.useHTTP` / `App.useHTTP` behaves like `Router.use` in express. It will
+  invoke the middleware or router for all non-WebSocket requests.
 
-- `Router.all` is similarly updated to apply only to non-WebSocket
+- `Router.all` is similarly updated to apply only to non-WebSocket requests.
+
+- `Router.use` / `App.use` will invoke the middleware or router for _all_
   requests.
-
-- `Router.use` / `App.use` will invoke the middleware or router for
-  *all* requests.
 
 - `Router.ws` will invoke the middleware only for WebSocket requests.
 
-- `App.createServer` is a convenience method which creates a server and
-  calls `attach` (see below).
+- `App.createServer` is a convenience method which creates a server and calls
+  `attach` (see below).
 
-- `App.attach` will attach the necessary event listeners to the given
-  server (e.g. if you want to use a https server, or a long-lived
-  server with hot reloading).
+- `App.attach` will attach the necessary event listeners to the given server
+  (e.g. if you want to use a https server, or a long-lived server with hot
+  reloading).
 
-- `App.detach` will remove all attached event listeners from the given
-  server.
+- `App.detach` will remove all attached event listeners from the given server.
 
-- `App.set('shutdown timeout', millis)` configures a timeout (in
-  milliseconds) used by `close()`, after which connections will be
-  forced to close even if they are in a transaction.
+- `App.set('shutdown timeout', millis)` configures a timeout (in milliseconds)
+  used by `close()`, after which connections will be forced to close even if
+  they are in a transaction.
 
-The `response` parameter passed to websocket handlers has additional
-methods:
+The `response` parameter passed to websocket handlers has additional methods:
 
-- `res.accept()` accepts the protocol switch, establishing the
-  websocket connection. This returns a promise which resolves to the
-  newly established websocket.
+- `res.accept()` accepts the protocol switch, establishing the websocket
+  connection. This returns a promise which resolves to the newly established
+  websocket.
 
-- `res.reject([httpStatus[, message]])` returns a HTTP error instead
-  of accepting the websocket connection. Defaults to HTTP 500.
+- `res.reject([httpStatus[, message]])` returns a HTTP error instead of
+  accepting the websocket connection. Defaults to HTTP 500.
 
-- `res.abandon()` stops all further processing of the connection. This
-  should be used if you want to delegate to another library which has
-  also registered an `upgrade` listener on the server. Note that this
-  is provided as an escape hatch; in general you should try to
-  `accept` the connection and pass the websocket to other libraries,
-  as this will handle lifecycle events (such as closing the server)
-  more gracefully.
+- `res.abandon()` stops all further processing of the connection. This should be
+  used if you want to delegate to another library which has also registered an
+  `upgrade` listener on the server. Note that this is provided as an escape
+  hatch; in general you should try to `accept` the connection and pass the
+  websocket to other libraries, as this will handle lifecycle events (such as
+  closing the server) more gracefully.
 
-- `res.sendError(httpStatus[, websocketErrorCode[, message]])` sends
-  a HTTP or websocket error and closes the connection. If no explicit
-  websocket error code is provided and the websocket connection has
-  already been established, this will default to `4000 + httpStatus`
-  (e.g. HTTP 404 becomes websocket error 4404).
+- `res.sendError(httpStatus[, websocketErrorCode[, message]])` sends a HTTP or
+  websocket error and closes the connection. If no explicit websocket error code
+  is provided and the websocket connection has already been established, this
+  will default to `4000 + httpStatus` (e.g. HTTP 404 becomes websocket error
+  4404).
 
-- `res.send(message)` shorthand for accepting the connection, sending
-  a message, then closing the connection. Provided for compatibility
-  with the `express` API.
+- `res.send(message)` shorthand for accepting the connection, sending a message,
+  then closing the connection. Provided for compatibility with the `express`
+  API.
 
-- `res.beginTransaction()` / `res.endTransaction()` mark (nestable)
-  transactions on the websocket connection. While a transaction is
-  active, `websocket-express` will avoid closing the connection
-  (e.g. during server shutdown). These should be used to wrap
-  short-lived sequences of messages which need to be sent together.
-  Do not use these for long-lived operations, as it will delay
-  server shutdown. To ensure `endTransaction` is called, it is
+- `res.beginTransaction()` / `res.endTransaction()` mark (nestable) transactions
+  on the websocket connection. While a transaction is active,
+  `websocket-express` will avoid closing the connection (e.g. during server
+  shutdown). These should be used to wrap short-lived sequences of messages
+  which need to be sent together. Do not use these for long-lived operations, as
+  it will delay server shutdown. To ensure `endTransaction` is called, it is
   recommended that you use the pattern:
 
   ```javascript
@@ -246,20 +238,20 @@ methods:
 
 The WebSocket returned by `accept` has some additional helper methods:
 
-- `ws.nextMessage` will return a promise which resolves with the next
-  message received by the websocket. If the socket closes before a
-  message arrives, the promise will be rejected. You can also specify
-  a timeout (with `nextMessage({ timeout: millis })`) to reject if no
-  message is received within the requested time.
+- `ws.nextMessage` will return a promise which resolves with the next message
+  received by the websocket. If the socket closes before a message arrives, the
+  promise will be rejected. You can also specify a timeout (with
+  `nextMessage({ timeout: millis })`) to reject if no message is received within
+  the requested time.
 
-  The object returned by `nextMessage` has a `data` element (a
-  `String` if using `ws` 7.x and the message is text, or a `Buffer`
-  if the message is binary, or if using `ws` 8.x), and an `isBinary`
-  boolean. You can use `String(message.data)` to convert the `Buffer`
-  to a string using UTF8 encoding, matching `ws` 7.x's behaviour.
+  The object returned by `nextMessage` has a `data` element (a `String` if using
+  `ws` 7.x and the message is text, or a `Buffer` if the message is binary, or
+  if using `ws` 8.x), and an `isBinary` boolean. You can use
+  `String(message.data)` to convert the `Buffer` to a string using UTF8
+  encoding, matching `ws` 7.x's behaviour.
 
 ## Breaking changes / migration guide
 
 - Version 4 fixes an issue with routing where websocket handlers would
-  incorrectly match sub-paths. To keep the previous behaviour, add an
-  explicit `/*rest` to the end of your websocket route.
+  incorrectly match sub-paths. To keep the previous behaviour, add an explicit
+  `/*rest` to the end of your websocket route.
