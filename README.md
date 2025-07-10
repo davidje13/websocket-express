@@ -257,3 +257,9 @@ The WebSocket returned by `accept` has some additional helper methods:
   if the message is binary, or if using `ws` 8.x), and an `isBinary`
   boolean. You can use `String(message.data)` to convert the `Buffer`
   to a string using UTF8 encoding, matching `ws` 7.x's behaviour.
+
+## Breaking changes / migration guide
+
+- Version 4 fixes an issue with routing where websocket handlers would
+  incorrectly match sub-paths. To keep the previous behaviour, add an
+  explicit `/*rest` to the end of your websocket route.
