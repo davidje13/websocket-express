@@ -322,19 +322,27 @@ function wrapHandler(o, method, wrapper) {
 function wrapHandlers(o, src = null) {
   const target = o;
 
+  let originalUse;
   if (src) {
-    target.use = src.use.bind(src);
+    originalUse = src.use.bind(src);
     http.METHODS.forEach((method) => {
       const name = method.toLowerCase();
       target[name] = src[name].bind(src);
     });
     target.all = src.all.bind(src);
+  } else {
+    originalUse = target.use.bind(target);
   }
 
   target.ws = target.all;
   wrapHandler(target, 'ws', wrapWebsocket);
 
-  target.useHTTP = target.use;
+  target.use = (...args) =>
+    originalUse(
+      ...args.map((arg) => (arg instanceof WebSocketExpress ? arg.app : arg)),
+    );
+
+  target.useHTTP = originalUse;
   wrapHandler(target, 'useHTTP', wrapNonWebsocket);
 
   http.METHODS.forEach((method) => {

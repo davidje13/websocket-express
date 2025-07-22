@@ -291,3 +291,27 @@ describe('WebSocketExpress routing', () => {
     });
   });
 });
+
+describe('sub-apps', () => {
+  const S = beforeEach(({ setParameter }) => {
+    const app1 = new WebSocketExpress();
+    const app2 = new WebSocketExpress();
+    app2.get('/get', (req, res) => {
+      res.send('nested-http-response');
+    });
+    app2.ws('/ws', async (req, res) => {
+      const ws = await res.accept();
+      ws.send('nested-ws-response');
+    });
+    app1.use('/nest', app2);
+    const server = app1.createServer();
+    setParameter(server);
+    return runServer(server);
+  });
+
+  it('delegates to sub-app', async ({ [S]: server }) => {
+    await request(server).get('/nest/get').expect(200);
+
+    await request(server).ws('/nest/ws').expectText('nested-ws-response');
+  });
+});
