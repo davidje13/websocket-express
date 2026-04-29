@@ -16,9 +16,9 @@ asynchronous operations in all locations.
 npm install --save websocket-express ws express @types/ws @types/express
 ```
 
-(`ws` and `express` are required as peer dependencies of `websocket-express`.
-You can use `express` version 4 or 5. `@types/ws` and `@types/express` must be
-added even if you are not using TypeScript in your project)
+`ws` and `express` are required as peer dependencies of `websocket-express`.
+`@types/ws` and `@types/express` must be added if you are using TypeScript in
+your project)
 
 ## Usage
 
