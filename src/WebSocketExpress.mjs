@@ -1,6 +1,6 @@
 import http from 'node:http';
 import express from 'express';
-import WebSocket from 'ws';
+import { WebSocketServer } from 'ws';
 import WebSocketWrapper from './WebSocketWrapper.mjs';
 import wrapHandlers, { wrapNonWebsocket } from './wrapHandlers.mjs';
 
@@ -43,7 +43,7 @@ export default class WebSocketExpress {
   constructor(...args) {
     this.app = express(...args);
     this.locals = this.app.locals;
-    this.wsServer = new WebSocket.Server({ noServer: true });
+    this.wsServer = new WebSocketServer({ noServer: true });
     this.activeWebSockets = new WeakMap();
 
     this.app.use((err, req, res, next) => {

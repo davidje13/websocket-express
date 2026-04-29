@@ -2,7 +2,7 @@
 
 var http = require('node:http');
 var express = require('express');
-var WebSocket = require('ws');
+var ws = require('ws');
 
 const NONCE = {};
 const NOOP = () => null;
@@ -393,7 +393,7 @@ class WebSocketExpress {
   constructor(...args) {
     this.app = express(...args);
     this.locals = this.app.locals;
-    this.wsServer = new WebSocket.Server({ noServer: true });
+    this.wsServer = new ws.WebSocketServer({ noServer: true });
     this.activeWebSockets = new WeakMap();
 
     this.app.use((err, req, res, next) => {

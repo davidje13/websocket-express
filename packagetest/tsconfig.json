@@ -3,6 +3,5 @@
     "strict": true,
     "noImplicitAny": true
   },
-  "include": ["**/*"],
-  "exclude": ["node_modules"]
+  "include": ["typescript.ts"]
 }

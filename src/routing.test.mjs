@@ -1,5 +1,5 @@
 import request from 'superwstest';
-import WebSocket from 'ws';
+import { WebSocketServer } from 'ws';
 import { WebSocketExpress, Router, isWebSocket } from './index.mjs';
 import runServer from './runServer.mjs';
 
@@ -255,7 +255,7 @@ describe('WebSocketExpress routing', () => {
     });
 
     it('does not interfere with the connection', async ({ [S]: server }) => {
-      const wsServer = new WebSocket.Server({ noServer: true });
+      const wsServer = new WebSocketServer({ noServer: true });
       server.on('upgrade', (req, socket, head) => {
         wsServer.handleUpgrade(req, socket, head, (ws) => {
           ws.send('hello');
@@ -272,7 +272,7 @@ describe('WebSocketExpress routing', () => {
     it('does not close the connection on server close', async ({
       [S]: server,
     }) => {
-      const wsServer = new WebSocket.Server({ noServer: true });
+      const wsServer = new WebSocketServer({ noServer: true });
       server.on('upgrade', (req, socket, head) => {
         wsServer.handleUpgrade(req, socket, head, async (ws) => {
           ws.send('hello');
