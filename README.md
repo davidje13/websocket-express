@@ -5,7 +5,7 @@ Extends [express](https://expressjs.com/) with WebSocket capabilities from
 WebSockets as well as allowing a single server to handle both HTTP and WebSocket
 requests.
 
-This project is similar to (and takes some inspiration from
+This project is similar to (and takes some inspiration from)
 [express-ws](https://github.com/HenningM/express-ws), but chooses to provide a
 separate API rather than monkeypatching the express objects, and supports
 asynchronous operations in all locations.
@@ -18,7 +18,7 @@ npm install --save websocket-express ws express @types/ws @types/express
 
 `ws` and `express` are required as peer dependencies of `websocket-express`.
 `@types/ws` and `@types/express` must be added if you are using TypeScript in
-your project)
+your project.
 
 ## Usage
 
